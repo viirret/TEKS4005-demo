@@ -1,98 +1,141 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { AppButton } from '@/components/app-button';
+import { LogoMark } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Brand, Layout } from '@/constants/brand';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
-
+/**
+ * Landing screen. Offers a sign-in entry (no-op) and the "create a profile"
+ * flow that asks the personality questions.
+ */
 export default function HomeScreen() {
+  const router = useRouter();
+  const theme = useTheme();
+  const { width } = useWindowDimensions();
+
+  // On wide screens (web / tablets) the two buttons sit side by side, on
+  // phones they stack full-width.
+  const wide = width >= 560;
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.page}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+        {/* Soft decorative blobs, kept behind everything. */}
+        <View style={[styles.blob, styles.blobTop, { backgroundColor: theme.tintSoft, pointerEvents: 'none' }]} />
+        <View style={[styles.blob, styles.blobBottom, { backgroundColor: theme.tintSoft, pointerEvents: 'none' }]} />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <View style={styles.content}>
+          <View style={styles.hero}>
+            <LogoMark size={128} />
+            <ThemedText style={styles.appName}>{Brand.name}</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.tagline}>
+              {Brand.tagline}
+            </ThemedText>
+          </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+          <View style={[styles.actions, wide && styles.actionsWide]}>
+            <AppButton
+              label="Create a profile"
+              variant="primary"
+              style={wide ? styles.actionButtonWide : styles.actionButtonNarrow}
+              onPress={() => router.push('/create-profile')}
+            />
+            <AppButton
+              label="Sign in"
+              variant="secondary"
+              style={wide ? styles.actionButtonWide : styles.actionButtonNarrow}
+              onPress={() => {
+                // Intentionally a no-op for this demo.
+                console.log(`[${Brand.name}] sign-in is not implemented yet.`);
+              }}
+            />
+          </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
+          <Pressable onPress={() => router.push('/create-profile')} style={styles.demoHint} accessibilityRole="link">
+            <ThemedText themeColor="textSecondary" type="small">
+              New here? The questions take ~2 minutes ♥
+            </ThemedText>
+          </Pressable>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  page: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    overflow: 'hidden',
   },
-  heroSection: {
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: Layout.maxContentWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
     paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    paddingVertical: Spacing.six,
+    gap: Spacing.six,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
+  hero: {
+    alignItems: 'center',
     gap: Spacing.three,
+  },
+  appName: {
+    fontSize: 48,
+    lineHeight: 56,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  tagline: {
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  actions: {
     alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    flexDirection: 'column',
+    gap: Spacing.three,
+    marginTop: Spacing.three,
+  },
+  actionsWide: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  actionButtonWide: {
+    flexGrow: 1,
+    maxWidth: 280,
+  },
+  actionButtonNarrow: {
+    alignSelf: 'stretch',
+  },
+  demoHint: {
+    marginTop: -Spacing.three,
+  },
+  blob: {
+    position: 'absolute',
+    borderRadius: 999,
+    opacity: 0.6,
+  },
+  blobTop: {
+    width: 320,
+    height: 320,
+    top: -120,
+    right: -120,
+  },
+  blobBottom: {
+    width: 280,
+    height: 280,
+    bottom: -110,
+    left: -110,
   },
 });

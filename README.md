@@ -1,56 +1,48 @@
-# Welcome to your Expo app 👋
+# Found — dating app UI demo 💘
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An [Expo](https://expo.dev) (SDK 57) demo app built with `expo-router`, running on
+**iOS, Android and web** from a single codebase.
+
+## What's here
+
+- **Landing screen** (`src/app/index.tsx`) — brand hero with two actions:
+  - **Create a profile** → takes you to the onboarding flow
+  - **Sign in** → intentionally a no-op for this demo
+- **Create a profile** (`src/app/create-profile.tsx`) — onboarding flow:
+  - **Profile photo** — pick a square-cropped image from the system
+    gallery/file picker (`expo-image-picker`)
+  - Basic info: name, age, occupation
+  - **8 personality questions** answered with a custom slider
+    (`src/components/slider.tsx`, built on core RN `PanResponder` — no extra
+    dependencies)
+  - **10 yes/no questions** answered with a segmented control
+  - A live completion progress bar
+  - On submit, the whole payload (including the photo metadata) is **logged to
+    the console** (`console.log` + pretty-printed JSON)
 
 ## Get started
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Press `w` for web, or scan the QR code with Expo Go on iOS/Android.
 
-### Other setup steps
+## Structure
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+src/
+├── app/
+│   ├── _layout.tsx        # Stack navigator + theme provider
+│   ├── index.tsx          # Landing screen
+│   └── create-profile.tsx # Onboarding / question flow
+├── components/            # AppButton, Slider, PhotoUploader, question cards, LogoMark, …
+└── constants/
+    ├── brand.ts           # Brand colors & layout values
+    ├── questions.ts       # The personality question definitions
+    └── theme.ts           # Light/dark colors
+```
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The layout is responsive: content is centered with a max width on desktop web,
+and stacks full-width on phones.

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
 
 import { Brand, Layout } from '@/constants/brand';
 import { useTheme } from '@/hooks/use-theme';
@@ -47,9 +47,15 @@ export function AppButton({
         },
         isGhost && { borderColor: 'transparent' },
         disabled && styles.disabled,
-        pressed && styles.pressed,
-        (hovered || pressed) && isPrimary && styles.primaryHovered,
-        (hovered || pressed) && variant === 'secondary' && { opacity: 0.85 },
+        // On web, React Native Web can report `pressed` during hover, which
+        // made the button visibly shrink. Never scale on web (hover feedback
+        // via color only); keep the tactile scale-down for native touch.
+        pressed && Platform.OS !== 'web' && styles.pressed,
+        (hovered || (pressed && Platform.OS !== 'web')) &&
+          isPrimary &&
+          styles.primaryHovered,
+        (hovered || (pressed && Platform.OS !== 'web')) &&
+          variant === 'secondary' && { opacity: 0.85 },
         style,
       ]}>
       <Text

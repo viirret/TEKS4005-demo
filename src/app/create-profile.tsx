@@ -69,12 +69,22 @@ export default function CreateProfileScreen() {
   const answeredCount = basicsAnswered + answeredIds.size;
   const progress = answeredCount / TOTAL_FIELDS;
 
+  // Age gate: only people aged 18+ may create a profile. An empty or invalid
+  // age also blocks submission so the gate can't be bypassed.
+  const ageNumber = age.trim() ? Number(age.trim()) : null;
+  const hasValidAge = ageNumber !== null && Number.isFinite(ageNumber) && ageNumber >= 18;
+  const ageError =
+    ageNumber !== null && Number.isFinite(ageNumber) && ageNumber < 18
+      ? 'You must be 18 or older to create a profile.'
+      : undefined;
+
   const handleSubmit = () => {
+    if (!name.trim() || !hasValidAge) return;
     const payload = {
       app: Brand.name,
       profile: {
         name: name.trim(),
-        age: age.trim() ? Number(age.trim()) : null,
+        age: ageNumber,
         occupation: occupation.trim(),
         photo: photo
           ? {
@@ -164,7 +174,7 @@ export default function CreateProfileScreen() {
                     />
                     <View style={styles.formRow}>
                       <FormField
-                        label="Age"
+                        label="Age (18+)"
                         placeholder="e.g. 28"
                         placeholderTextColor={theme.textSecondary}
                         value={age}
@@ -172,6 +182,7 @@ export default function CreateProfileScreen() {
                         keyboardType="number-pad"
                         inputMode="numeric"
                         maxLength={3}
+                        error={ageError}
                       />
                       <FormField
                         label="Occupation"
@@ -232,12 +243,16 @@ export default function CreateProfileScreen() {
                     <AppButton
                       label={submitted ? 'Profile created' : 'Create profile'}
                       variant="primary"
-                      disabled={!name.trim()}
+                      disabled={!name.trim() || !hasValidAge}
                       onPress={handleSubmit}
                     />
                     {!name.trim() ? (
                       <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
                         Add your name to create the profile.
+                      </ThemedText>
+                    ) : !hasValidAge ? (
+                      <ThemedText themeColor="danger" type="small" style={styles.submitHint}>
+                        You must be 18 or older to create a profile.
                       </ThemedText>
                     ) : (
                       <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>

@@ -11,7 +11,8 @@ An [Expo](https://expo.dev) (SDK 57) demo app built with `expo-router`, running 
 - **Create a profile** (`src/app/create-profile.tsx`) — onboarding flow:
   - **Profile photo** — pick a square-cropped image from the system
     gallery/file picker (`expo-image-picker`)
-  - Basic info: name, age, occupation
+  - Basic info: name, occupation, and age with an **18+ gate** — anyone under
+    18 (or without a valid age) can't create a profile
   - **8 personality questions** answered with a custom slider
     (`src/components/slider.tsx`, built on core RN `PanResponder` — no extra
     dependencies)

@@ -8,6 +8,8 @@ type FormFieldProps = TextInputProps & {
   label: string;
   /** Hint shown under the input, e.g. units or an example. */
   hint?: string;
+  /** Error message shown under the input in the danger color. */
+  error?: string;
   labelColor?: ThemeColor;
 };
 
@@ -15,7 +17,13 @@ type FormFieldProps = TextInputProps & {
  * A labeled text input used for the basic profile fields (name, age,
  * occupation). Styled consistently across web and mobile.
  */
-export function FormField({ label, hint, labelColor = 'text', ...inputProps }: FormFieldProps) {
+export function FormField({
+  label,
+  hint,
+  error,
+  labelColor = 'text',
+  ...inputProps
+}: FormFieldProps) {
   const theme = useTheme();
 
   return (
@@ -29,13 +37,17 @@ export function FormField({ label, hint, labelColor = 'text', ...inputProps }: F
           styles.input,
           {
             backgroundColor: theme.backgroundElement,
-            borderColor: theme.backgroundSelected,
+            borderColor: error ? theme.danger : theme.backgroundSelected,
             color: theme.text,
           },
         ]}
         {...inputProps}
       />
-      {hint ? (
+      {error ? (
+        <ThemedText themeColor="danger" type="small" style={styles.hint}>
+          {error}
+        </ThemedText>
+      ) : hint ? (
         <ThemedText themeColor="textSecondary" type="small" style={styles.hint}>
           {hint}
         </ThemedText>

@@ -19,6 +19,8 @@ type SliderQuestionCardProps = {
   onChange: (value: number) => void;
   important: boolean;
   onImportantChange: (important: boolean) => void;
+  /** Whether the user has picked a value yet; the card stays muted until then. */
+  answered: boolean;
 };
 
 /**
@@ -36,6 +38,7 @@ export function SliderQuestionCard({
   onChange,
   important,
   onImportantChange,
+  answered,
 }: SliderQuestionCardProps) {
   const theme = useTheme();
 
@@ -43,8 +46,13 @@ export function SliderQuestionCard({
     <ThemedView type="backgroundElement" style={styles.card}>
       <View style={styles.headerRow}>
         <ThemedText style={styles.question}>{question}</ThemedText>
-        <View style={[styles.valueChip, { backgroundColor: theme.tintSoft }]}>
-          <ThemedText themeColor="tint" type="smallBold">
+        <View
+          style={[
+            styles.valueChip,
+            { backgroundColor: answered ? theme.tintSoft : theme.backgroundSelected },
+          ]}
+        >
+          <ThemedText themeColor={answered ? 'tint' : 'textSecondary'} type="smallBold">
             {value}
           </ThemedText>
         </View>
@@ -56,6 +64,7 @@ export function SliderQuestionCard({
         max={max}
         step={step}
         onValueChange={onChange}
+        active={answered}
         accessibilityLabel={`${question} value ${value} of ${max}`}
       />
 

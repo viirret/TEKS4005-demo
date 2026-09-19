@@ -161,12 +161,14 @@ export default function CreateProfileScreen() {
             <ThemedText style={styles.headerTitle}>Create your profile</ThemedText>
             <View style={styles.headerSpacer} />
           </View>
-          <View style={styles.progressBlock}>
-            <ThemedText themeColor="textSecondary" type="small" style={styles.progressLabel}>
-              {answeredCount} of {TOTAL_FIELDS} answered
-            </ThemedText>
-            <ProgressBar progress={progress} />
-          </View>
+          {!submitted && (
+            <View style={styles.progressBlock}>
+              <ThemedText themeColor="textSecondary" type="small" style={styles.progressLabel}>
+                {answeredCount} of {TOTAL_FIELDS} answered
+              </ThemedText>
+              <ProgressBar progress={progress} />
+            </View>
+          )}
         </View>
 
         <KeyboardAvoidingView
@@ -271,6 +273,7 @@ export default function CreateProfileScreen() {
                       onChange={(value) => handleAnswer(question.id, value)}
                       important={importantIds.has(question.id)}
                       onImportantChange={() => handleImportant(question.id)}
+                      answered={answeredIds.has(question.id)}
                     />
                   ))}
 

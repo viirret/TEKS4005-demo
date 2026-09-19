@@ -12,6 +12,8 @@ export type SliderProps = {
   onValueChange: (value: number) => void;
   /** Accessible name for screen readers. */
   accessibilityLabel?: string;
+  /** Whether the user has picked a value yet; the slider stays muted grey until then. */
+  active?: boolean;
 };
 
 /**
@@ -28,8 +30,13 @@ export function Slider({
   step = 1,
   onValueChange,
   accessibilityLabel,
+  active = true,
 }: SliderProps) {
   const theme = useTheme();
+
+  // Untouched sliders render in neutral grey so an unanswered question is
+  // obvious; the brand pink kicks in once the user actually picks a value.
+  const activeColor = active ? Brand.primary : theme.backgroundSelected;
 
   const widthRef = useRef(0);
   const onChangeRef = useRef(onValueChange);
@@ -79,16 +86,13 @@ export function Slider({
       <View style={styles.trackArea}>
         <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]} />
         <View
-          style={[
-            styles.fill,
-            { backgroundColor: Brand.primary, width: `${pct}%` as `${number}%` },
-          ]}
+          style={[styles.fill, { backgroundColor: activeColor, width: `${pct}%` as `${number}%` }]}
         />
         <View
           style={[
             styles.thumb,
             {
-              borderColor: Brand.primary,
+              borderColor: activeColor,
               left: `${pct}%` as `${number}%`,
             },
           ]}

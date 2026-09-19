@@ -51,58 +51,79 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.grid}>
-        {photos.map((photo, index) => (
-          <View key={`${photo.uri}-${index}`} style={styles.tile}>
-            <Image
-              source={{ uri: photo.uri }}
-              style={styles.tileImage}
-              contentFit="cover"
-              transition={150}
-            />
-            {index === 0 && (
-              <View style={styles.mainBadge}>
-                <ThemedText style={styles.mainBadgeLabel}>Main</ThemedText>
-              </View>
-            )}
+      {photos.length === 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add photos"
+          onPress={pickPhotos}
+          style={({ pressed }) => [
+            styles.addButtonEmpty,
+            {
+              borderColor: theme.backgroundSelected,
+              backgroundColor: theme.backgroundElement,
+            },
+            pressed && styles.pressed,
+          ]}
+        >
+          <ThemedText style={styles.addGlyph}>＋</ThemedText>
+          <ThemedText themeColor="textSecondary" type="smallBold">
+            Add photos
+          </ThemedText>
+        </Pressable>
+      ) : (
+        <View style={styles.grid}>
+          {photos.map((photo, index) => (
+            <View key={`${photo.uri}-${index}`} style={styles.tile}>
+              <Image
+                source={{ uri: photo.uri }}
+                style={styles.tileImage}
+                contentFit="cover"
+                transition={150}
+              />
+              {index === 0 && (
+                <View style={styles.mainBadge}>
+                  <ThemedText style={styles.mainBadgeLabel}>Main</ThemedText>
+                </View>
+              )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Remove photo ${index + 1}`}
+                hitSlop={8}
+                onPress={() => removePhoto(index)}
+                style={({ pressed }) => [
+                  styles.removeButton,
+                  { backgroundColor: theme.background },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <ThemedText style={styles.removeGlyph}>✕</ThemedText>
+              </Pressable>
+            </View>
+          ))}
+
+          {photos.length < MAX_PHOTOS && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Remove photo ${index + 1}`}
-              hitSlop={8}
-              onPress={() => removePhoto(index)}
+              accessibilityLabel="Add photos"
+              onPress={pickPhotos}
               style={({ pressed }) => [
-                styles.removeButton,
-                { backgroundColor: theme.background },
+                styles.tile,
+                styles.addTile,
+                {
+                  borderColor: theme.backgroundSelected,
+                  backgroundColor: theme.backgroundElement,
+                },
                 pressed && styles.pressed,
               ]}
             >
-              <ThemedText style={styles.removeGlyph}>✕</ThemedText>
+              <ThemedText style={styles.addGlyph}>＋</ThemedText>
+              <ThemedText themeColor="textSecondary" type="small">
+                Add
+              </ThemedText>
             </Pressable>
-          </View>
-        ))}
-
-        {photos.length < MAX_PHOTOS && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Add photos"
-            onPress={pickPhotos}
-            style={({ pressed }) => [
-              styles.tile,
-              styles.addTile,
-              {
-                borderColor: theme.backgroundSelected,
-                backgroundColor: theme.backgroundElement,
-              },
-              pressed && styles.pressed,
-            ]}
-          >
-            <ThemedText style={styles.addGlyph}>＋</ThemedText>
-            <ThemedText themeColor="textSecondary" type="small">
-              Add
-            </ThemedText>
-          </Pressable>
-        )}
-      </View>
+          )}
+        </View>
+      )}
 
       <ThemedText themeColor="textSecondary" type="small" style={styles.hint}>
         {photos.length > 0
@@ -169,6 +190,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.one,
+  },
+  addButtonEmpty: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 260,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.four,
   },
   addGlyph: {
     fontSize: 26,

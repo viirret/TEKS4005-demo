@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -16,6 +17,7 @@ import { AppButton } from '@/components/app-button';
 import { FormField } from '@/components/form-field';
 import { LogoMark } from '@/components/logo';
 import { PhotoUploader } from '@/components/photo-uploader';
+import { ProfileCard, type Profile } from '@/components/profile-card';
 import { ProgressBar } from '@/components/progress-bar';
 import { SliderQuestionCard } from '@/components/slider-question';
 import { ThemedText } from '@/components/themed-text';
@@ -56,9 +58,10 @@ export default function CreateProfileScreen() {
   const [age, setAge] = useState('');
   const [occupation, setOccupation] = useState('');
   const [description, setDescription] = useState('');
-  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [photos, setPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [answers, setAnswers] = useState<PersonalityAnswers>(INITIAL_ANSWERS);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const handleAnswer = (id: string, value: number | boolean) => {
@@ -74,7 +77,7 @@ export default function CreateProfileScreen() {
   const basicsAnswered =
     [name.trim(), age.trim(), occupation.trim(), description.trim()].filter(
       (value) => value.length > 0,
-    ).length + (photo ? 1 : 0);
+    ).length + (photos.length > 0 ? 1 : 0);
   const answeredCount = basicsAnswered + answeredIds.size;
   const progress = answeredCount / TOTAL_FIELDS;
 
@@ -99,20 +102,25 @@ export default function CreateProfileScreen() {
         age: ageNumber,
         occupation: occupation.trim(),
         description: description.trim(),
-        photo: photo
-          ? {
-              uri: photo.uri,
-              width: photo.width,
-              height: photo.height,
-              fileName: photo.fileName ?? null,
-              fileSize: photo.fileSize ?? null,
-            }
-          : null,
+        photos: photos.map((asset) => ({
+          uri: asset.uri,
+          width: asset.width,
+          height: asset.height,
+          fileName: asset.fileName ?? null,
+          fileSize: asset.fileSize ?? null,
+        })),
       },
       personality: { ...answers },
     };
     console.log(`[${Brand.name}] New profile created:`);
     console.log(JSON.stringify(payload, null, 2));
+    setProfile({
+      name: name.trim(),
+      age: ageNumber ?? 0,
+      occupation: occupation.trim(),
+      description: description.trim(),
+      photos: photos.map((asset) => ({ uri: asset.uri })),
+    });
     setSubmitted(true);
   };
 
@@ -156,10 +164,9 @@ export default function CreateProfileScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.content}>
-              {submitted ? (
+              {submitted && profile ? (
                 <SuccessView
-                  name={name.trim()}
-                  photo={photo}
+                  profile={profile}
                   onReview={() => setSubmitted(false)}
                   onHome={() => router.replace('/')}
                 />
@@ -176,7 +183,7 @@ export default function CreateProfileScreen() {
                   </View>
 
                   <ThemedView type="backgroundElement" style={styles.formCard}>
-                    <PhotoUploader photo={photo} onChange={setPhoto} />
+                    <PhotoUploader photos={photos} onChange={setPhotos} />
                     <View
                       style={[styles.formDivider, { backgroundColor: theme.backgroundSelected }]}
                     />
@@ -302,21 +309,23 @@ export default function CreateProfileScreen() {
 }
 
 function SuccessView({
-  name,
-  photo,
+  profile,
   onReview,
   onHome,
 }: {
-  name: string;
-  photo: ImagePicker.ImagePickerAsset | null;
+  profile: Profile;
   onReview: () => void;
   onHome: () => void;
 }) {
+  const theme = useTheme();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const mainPhoto = profile.photos[0];
+
   return (
     <ThemedView type="backgroundElement" style={styles.successCard}>
-      {photo ? (
+      {mainPhoto ? (
         <Image
-          source={{ uri: photo.uri }}
+          source={{ uri: mainPhoto.uri }}
           style={[styles.successAvatar, { borderColor: Brand.primary }]}
           contentFit="cover"
           transition={150}
@@ -325,7 +334,7 @@ function SuccessView({
         <LogoMark size={84} />
       )}
       <ThemedText type="subtitle" style={styles.successTitle}>
-        You&apos;re all set{name ? `, ${name}` : ''}!
+        You&apos;re all set, {profile.name}!
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
         Your profile was created. Open the developer console to see your answers — they&apos;re just
@@ -333,18 +342,67 @@ function SuccessView({
       </ThemedText>
       <View style={styles.successActions}>
         <AppButton
-          label="Back to start"
+          label="View my profile"
           variant="primary"
+          onPress={() => setPreviewOpen(true)}
+          style={styles.successButton}
+        />
+        <AppButton
+          label="Back to start"
+          variant="secondary"
           onPress={onHome}
           style={styles.successButton}
         />
         <AppButton
           label="Review answers"
-          variant="secondary"
+          variant="ghost"
           onPress={onReview}
           style={styles.successButton}
         />
       </View>
+
+      <Modal
+        visible={previewOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <ThemedView style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <ThemedText style={styles.modalTitle}>Your profile</ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close profile preview"
+                hitSlop={12}
+                onPress={() => setPreviewOpen(false)}
+                style={({ pressed }) => [
+                  styles.modalClose,
+                  { backgroundColor: theme.backgroundElement },
+                  pressed && { opacity: 0.6 },
+                ]}
+              >
+                <ThemedText style={styles.modalCloseGlyph}>✕</ThemedText>
+              </Pressable>
+            </View>
+
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator
+            >
+              <ProfileCard profile={profile} />
+            </ScrollView>
+
+            <AppButton
+              label="Close"
+              variant="secondary"
+              onPress={() => setPreviewOpen(false)}
+              style={styles.successButton}
+            />
+          </ThemedView>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -463,5 +521,48 @@ const styles = StyleSheet.create({
   },
   successButton: {
     alignSelf: 'stretch',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 560,
+    maxHeight: '92%',
+    borderRadius: 28,
+    padding: Spacing.four,
+    gap: Spacing.three,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '800',
+  },
+  modalClose: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseGlyph: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  modalScroll: {
+    flexShrink: 1,
+  },
+  modalScrollContent: {
+    paddingBottom: Spacing.one,
   },
 });

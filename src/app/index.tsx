@@ -22,8 +22,20 @@ export default function HomeScreen() {
     <ThemedView style={styles.page}>
       <SafeAreaView style={styles.safeArea}>
         {/* Soft decorative blobs, kept behind everything. */}
-        <View style={[styles.blob, styles.blobTop, { backgroundColor: theme.tintSoft, pointerEvents: 'none' }]} />
-        <View style={[styles.blob, styles.blobBottom, { backgroundColor: theme.tintSoft, pointerEvents: 'none' }]} />
+        <View
+          style={[
+            styles.blob,
+            styles.blobTop,
+            { backgroundColor: theme.tintSoft, pointerEvents: 'none' },
+          ]}
+        />
+        <View
+          style={[
+            styles.blob,
+            styles.blobBottom,
+            { backgroundColor: theme.tintSoft, pointerEvents: 'none' },
+          ]}
+        />
 
         <View style={styles.content}>
           <View style={styles.hero}>
@@ -52,7 +64,11 @@ export default function HomeScreen() {
             />
           </View>
 
-          <Pressable onPress={() => router.push('/create-profile')} style={styles.demoHint} accessibilityRole="link">
+          <Pressable
+            onPress={() => router.push('/create-profile')}
+            style={styles.demoHint}
+            accessibilityRole="link"
+          >
             <ThemedText themeColor="textSecondary" type="small">
               New here? The questions take ~2 minutes ♥
             </ThemedText>

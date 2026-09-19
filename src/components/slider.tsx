@@ -57,7 +57,7 @@ export function Slider({
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => updateRef.current(evt.nativeEvent.locationX),
       onPanResponderMove: (evt) => updateRef.current(evt.nativeEvent.locationX),
-    })
+    }),
   ).current;
 
   const pct = ((value - min) / (max - min)) * 100;
@@ -74,7 +74,8 @@ export function Slider({
         styles.container,
         Platform.OS === 'web' && ({ cursor: 'pointer', touchAction: 'none' } as object),
       ]}
-      {...panResponder.panHandlers}>
+      {...panResponder.panHandlers}
+    >
       <View style={styles.trackArea}>
         <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]} />
         <View

@@ -20,7 +20,8 @@ export function LogoMark({ size = 72 }: { size?: number }) {
           height: size,
           borderRadius: size * 0.28,
         },
-      ]}>
+      ]}
+    >
       <View style={[styles.glowBackdrop, { backgroundColor: Brand.heartStart }]} />
       <Text
         style={[
@@ -29,7 +30,8 @@ export function LogoMark({ size = 72 }: { size?: number }) {
             fontSize: size * 0.5,
             color: theme.background,
           },
-        ]}>
+        ]}
+      >
         ♥
       </Text>
     </View>

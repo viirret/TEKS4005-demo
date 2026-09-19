@@ -1,7 +1,7 @@
-import { useRouter } from "expo-router";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,27 +9,27 @@ import {
   ScrollView,
   StyleSheet,
   View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton } from "@/components/app-button";
-import { FormField } from "@/components/form-field";
-import { LogoMark } from "@/components/logo";
-import { PhotoUploader } from "@/components/photo-uploader";
-import { ProgressBar } from "@/components/progress-bar";
-import { SliderQuestionCard } from "@/components/slider-question";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { YesNoQuestionCard } from "@/components/yes-no-question";
-import { Brand, Layout } from "@/constants/brand";
-import { Spacing } from "@/constants/theme";
+import { AppButton } from '@/components/app-button';
+import { FormField } from '@/components/form-field';
+import { LogoMark } from '@/components/logo';
+import { PhotoUploader } from '@/components/photo-uploader';
+import { ProgressBar } from '@/components/progress-bar';
+import { SliderQuestionCard } from '@/components/slider-question';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { YesNoQuestionCard } from '@/components/yes-no-question';
+import { Brand, Layout } from '@/constants/brand';
+import { Spacing } from '@/constants/theme';
 import {
   PERSONALITY_QUESTIONS,
   SLIDER_QUESTIONS,
   TOTAL_QUESTION_COUNT,
   YES_NO_QUESTIONS,
-} from "@/constants/questions";
-import { useTheme } from "@/hooks/use-theme";
+} from '@/constants/questions';
+import { useTheme } from '@/hooks/use-theme';
 
 type PersonalityAnswers = Record<string, number | boolean>;
 
@@ -52,10 +52,10 @@ export default function CreateProfileScreen() {
   const router = useRouter();
   const theme = useTheme();
 
-  const [name, setName] = useState("");
-  const [age, setAge] = useState("");
-  const [occupation, setOccupation] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [occupation, setOccupation] = useState('');
+  const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [answers, setAnswers] = useState<PersonalityAnswers>(INITIAL_ANSWERS);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
@@ -82,15 +82,12 @@ export default function CreateProfileScreen() {
   // invalid age also blocks submission so the gate can't be bypassed.
   const ageNumber = age.trim() ? Number(age.trim()) : null;
   const hasValidAge =
-    ageNumber !== null &&
-    Number.isFinite(ageNumber) &&
-    ageNumber >= 18 &&
-    ageNumber <= 125;
+    ageNumber !== null && Number.isFinite(ageNumber) && ageNumber >= 18 && ageNumber <= 125;
   const ageError =
     ageNumber !== null && Number.isFinite(ageNumber) && ageNumber < 18
-      ? "You must be 18 or older to create a profile."
+      ? 'You must be 18 or older to create a profile.'
       : ageNumber !== null && Number.isFinite(ageNumber) && ageNumber > 125
-        ? "Age must be 125 or younger."
+        ? 'Age must be 125 or younger.'
         : undefined;
 
   const handleSubmit = () => {
@@ -121,7 +118,7 @@ export default function CreateProfileScreen() {
 
   return (
     <ThemedView style={styles.page}>
-      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -138,17 +135,11 @@ export default function CreateProfileScreen() {
             >
               <ThemedText style={styles.backIcon}>←</ThemedText>
             </Pressable>
-            <ThemedText style={styles.headerTitle}>
-              Create your profile
-            </ThemedText>
+            <ThemedText style={styles.headerTitle}>Create your profile</ThemedText>
             <View style={styles.headerSpacer} />
           </View>
           <View style={styles.progressBlock}>
-            <ThemedText
-              themeColor="textSecondary"
-              type="small"
-              style={styles.progressLabel}
-            >
+            <ThemedText themeColor="textSecondary" type="small" style={styles.progressLabel}>
               {answeredCount} of {TOTAL_FIELDS} answered
             </ThemedText>
             <ProgressBar progress={progress} />
@@ -157,7 +148,7 @@ export default function CreateProfileScreen() {
 
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
             style={styles.flex}
@@ -170,7 +161,7 @@ export default function CreateProfileScreen() {
                   name={name.trim()}
                   photo={photo}
                   onReview={() => setSubmitted(false)}
-                  onHome={() => router.replace("/")}
+                  onHome={() => router.replace('/')}
                 />
               ) : (
                 <>
@@ -187,10 +178,7 @@ export default function CreateProfileScreen() {
                   <ThemedView type="backgroundElement" style={styles.formCard}>
                     <PhotoUploader photo={photo} onChange={setPhoto} />
                     <View
-                      style={[
-                        styles.formDivider,
-                        { backgroundColor: theme.backgroundSelected },
-                      ]}
+                      style={[styles.formDivider, { backgroundColor: theme.backgroundSelected }]}
                     />
 
                     <FormField
@@ -208,9 +196,7 @@ export default function CreateProfileScreen() {
                         placeholder="e.g. 28"
                         placeholderTextColor={theme.textSecondary}
                         value={age}
-                        onChangeText={(text) =>
-                          setAge(text.replace(/[^0-9]/g, ""))
-                        }
+                        onChangeText={(text) => setAge(text.replace(/[^0-9]/g, ''))}
                         keyboardType="number-pad"
                         inputMode="numeric"
                         maxLength={3}
@@ -246,8 +232,7 @@ export default function CreateProfileScreen() {
                       Personality
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      Slide into the answers that feel most like you — there are
-                      no wrong ones.
+                      Slide into the answers that feel most like you — there are no wrong ones.
                     </ThemedText>
                   </View>
 
@@ -287,33 +272,21 @@ export default function CreateProfileScreen() {
                   {/* Submit */}
                   <View style={styles.submitBlock}>
                     <AppButton
-                      label={submitted ? "Profile created" : "Create profile"}
+                      label={submitted ? 'Profile created' : 'Create profile'}
                       variant="primary"
                       disabled={!name.trim() || !hasValidAge}
                       onPress={handleSubmit}
                     />
                     {!name.trim() ? (
-                      <ThemedText
-                        themeColor="textSecondary"
-                        type="small"
-                        style={styles.submitHint}
-                      >
+                      <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
                         Add your name to create the profile.
                       </ThemedText>
                     ) : !hasValidAge ? (
-                      <ThemedText
-                        themeColor="danger"
-                        type="small"
-                        style={styles.submitHint}
-                      >
+                      <ThemedText themeColor="danger" type="small" style={styles.submitHint}>
                         You must be 18 or older to create a profile.
                       </ThemedText>
                     ) : (
-                      <ThemedText
-                        themeColor="textSecondary"
-                        type="small"
-                        style={styles.submitHint}
-                      >
+                      <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
                         Your answers are logged to the console.
                       </ThemedText>
                     )}
@@ -352,11 +325,11 @@ function SuccessView({
         <LogoMark size={84} />
       )}
       <ThemedText type="subtitle" style={styles.successTitle}>
-        You&apos;re all set{name ? `, ${name}` : ""}!
+        You&apos;re all set{name ? `, ${name}` : ''}!
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
-        Your profile was created. Open the developer console to see your answers
-        — they&apos;re just logged there for now.
+        Your profile was created. Open the developer console to see your answers — they&apos;re just
+        logged there for now.
       </ThemedText>
       <View style={styles.successActions}>
         <AppButton
@@ -393,25 +366,25 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backIcon: {
     fontSize: 20,
     lineHeight: 24,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   headerSpacer: {
     width: 40,
@@ -420,14 +393,14 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   progressLabel: {
-    textAlign: "right",
+    textAlign: 'right',
   },
   scrollContent: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingBottom: Spacing.six + 24,
   },
   content: {
-    width: "100%",
+    width: '100%',
     maxWidth: Layout.maxContentWidth,
     paddingHorizontal: Spacing.four,
     gap: Spacing.four,
@@ -447,11 +420,11 @@ const styles = StyleSheet.create({
   },
   formDivider: {
     height: StyleSheet.hairlineWidth,
-    alignSelf: "stretch",
+    alignSelf: 'stretch',
   },
   formRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.three,
   },
   submitBlock: {
@@ -459,17 +432,17 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   submitHint: {
-    textAlign: "center",
+    textAlign: 'center',
   },
   successCard: {
     marginTop: Spacing.five,
     borderRadius: 24,
     padding: Spacing.five,
-    alignItems: "center",
+    alignItems: 'center',
     gap: Spacing.three,
   },
   successTitle: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 26,
     lineHeight: 34,
   },
@@ -478,17 +451,17 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 42,
     borderWidth: 3,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   successBody: {
-    textAlign: "center",
+    textAlign: 'center',
   },
   successActions: {
-    alignSelf: "stretch",
+    alignSelf: 'stretch',
     gap: Spacing.two,
     marginTop: Spacing.two,
   },
   successButton: {
-    alignSelf: "stretch",
+    alignSelf: 'stretch',
   },
 });

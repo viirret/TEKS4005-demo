@@ -22,7 +22,10 @@ export function YesNoQuestionCard({ question, value, onChange }: YesNoQuestionCa
     <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedText style={styles.question}>{question}</ThemedText>
 
-      <View accessibilityRole="radiogroup" style={[styles.segment, { backgroundColor: theme.backgroundSelected }]}>
+      <View
+        accessibilityRole="radiogroup"
+        style={[styles.segment, { backgroundColor: theme.backgroundSelected }]}
+      >
         {(
           [
             { key: true, label: 'Yes' },
@@ -38,15 +41,15 @@ export function YesNoQuestionCard({ question, value, onChange }: YesNoQuestionCa
               onPress={() => onChange(option.key)}
               style={({ pressed }) => [
                 styles.option,
-                selected
-                  ? { backgroundColor: Brand.primary }
-                  : { backgroundColor: 'transparent' },
+                selected ? { backgroundColor: Brand.primary } : { backgroundColor: 'transparent' },
                 pressed && !selected && { backgroundColor: theme.backgroundElement },
-              ]}>
+              ]}
+            >
               <ThemedText
                 type="smallBold"
                 themeColor={selected ? undefined : 'textSecondary'}
-                style={selected ? { color: Brand.textOnPrimary } : undefined}>
+                style={selected ? { color: Brand.textOnPrimary } : undefined}
+              >
                 {option.label}
               </ThemedText>
             </Pressable>

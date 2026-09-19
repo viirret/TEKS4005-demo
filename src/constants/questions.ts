@@ -122,7 +122,12 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
 
 export const YES_NO_QUESTIONS: YesNoQuestion[] = [
   { id: 'yn_morning', type: 'yesno', question: 'Are you a morning person?', defaultValue: false },
-  { id: 'yn_pets', type: 'yesno', question: 'Do you have (or dream of) pets?', defaultValue: false },
+  {
+    id: 'yn_pets',
+    type: 'yesno',
+    question: 'Do you have (or dream of) pets?',
+    defaultValue: false,
+  },
   {
     id: 'yn_serious',
     type: 'yesno',

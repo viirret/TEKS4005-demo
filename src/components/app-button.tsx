@@ -51,13 +51,12 @@ export function AppButton({
         // made the button visibly shrink. Never scale on web (hover feedback
         // via color only); keep the tactile scale-down for native touch.
         pressed && Platform.OS !== 'web' && styles.pressed,
-        (hovered || (pressed && Platform.OS !== 'web')) &&
-          isPrimary &&
-          styles.primaryHovered,
+        (hovered || (pressed && Platform.OS !== 'web')) && isPrimary && styles.primaryHovered,
         (hovered || (pressed && Platform.OS !== 'web')) &&
           variant === 'secondary' && { opacity: 0.85 },
         style,
-      ]}>
+      ]}
+    >
       <Text
         style={[
           styles.label,
@@ -65,7 +64,8 @@ export function AppButton({
           isPrimary && { color: Brand.textOnPrimary },
           variant === 'secondary' && { color: Brand.primary, fontWeight: '700' },
           isGhost && { color: theme.tint },
-        ]}>
+        ]}
+      >
         {label}
       </Text>
     </Pressable>

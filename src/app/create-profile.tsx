@@ -10,6 +10,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -65,6 +67,23 @@ export default function CreateProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
+  // Progress through the flow: the bar tracks how far the user has actually
+  // scrolled (each question has a default answer, so leaving one as "No" /
+  // untouched and moving on still counts as progress). Reaching the end of the
+  // page fills the bar completely.
+  const [scrollMetrics, setScrollMetrics] = useState({ top: 0, viewport: 0, content: 0 });
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setScrollMetrics((previous) => {
+      const next = {
+        ...previous,
+        top: event.nativeEvent.contentOffset.y,
+        content: event.nativeEvent.contentSize.height,
+      };
+      return next.top === previous.top && next.content === previous.content ? previous : next;
+    });
+  };
+
   const handleAnswer = (id: string, value: number | boolean) => {
     setAnswers((previous) => ({ ...previous, [id]: value }));
     setAnsweredIds((previous) => {
@@ -84,12 +103,11 @@ export default function CreateProfileScreen() {
     });
   };
 
-  const basicsAnswered =
-    [name.trim(), age.trim(), occupation.trim(), description.trim()].filter(
-      (value) => value.length > 0,
-    ).length + (photos.length > 0 ? 1 : 0);
-  const answeredCount = basicsAnswered + answeredIds.size;
-  const progress = answeredCount / TOTAL_FIELDS;
+  const maxScroll = Math.max(0, scrollMetrics.content - scrollMetrics.viewport);
+  const scrollFraction =
+    maxScroll > 0 ? Math.min(1, Math.max(0, scrollMetrics.top / maxScroll)) : 0;
+  const progressSteps = Math.round(scrollFraction * TOTAL_FIELDS);
+  const progress = progressSteps / TOTAL_FIELDS;
 
   // Age gate: profiles are open to adults from 18 through 125. An empty or
   // invalid age also blocks submission so the gate can't be bypassed.
@@ -164,7 +182,7 @@ export default function CreateProfileScreen() {
           {!submitted && (
             <View style={styles.progressBlock}>
               <ThemedText themeColor="textSecondary" type="small" style={styles.progressLabel}>
-                {answeredCount} of {TOTAL_FIELDS} answered
+                {progressSteps} of {TOTAL_FIELDS} complete
               </ThemedText>
               <ProgressBar progress={progress} />
             </View>
@@ -179,6 +197,14 @@ export default function CreateProfileScreen() {
             style={styles.flex}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            onScroll={handleScroll}
+            onLayout={(event) =>
+              setScrollMetrics((previous) => {
+                const viewport = event.nativeEvent.layout.height;
+                return previous.viewport === viewport ? previous : { ...previous, viewport };
+              })
+            }
+            scrollEventThrottle={16}
           >
             <View style={styles.content}>
               {submitted && profile ? (

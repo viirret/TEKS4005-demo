@@ -1,28 +1,35 @@
-import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton } from '@/components/app-button';
-import { FormField } from '@/components/form-field';
-import { LogoMark } from '@/components/logo';
-import { PhotoUploader } from '@/components/photo-uploader';
-import { ProgressBar } from '@/components/progress-bar';
-import { SliderQuestionCard } from '@/components/slider-question';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { YesNoQuestionCard } from '@/components/yes-no-question';
-import { Brand, Layout } from '@/constants/brand';
-import { Spacing } from '@/constants/theme';
+import { AppButton } from "@/components/app-button";
+import { FormField } from "@/components/form-field";
+import { LogoMark } from "@/components/logo";
+import { PhotoUploader } from "@/components/photo-uploader";
+import { ProgressBar } from "@/components/progress-bar";
+import { SliderQuestionCard } from "@/components/slider-question";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { YesNoQuestionCard } from "@/components/yes-no-question";
+import { Brand, Layout } from "@/constants/brand";
+import { Spacing } from "@/constants/theme";
 import {
   PERSONALITY_QUESTIONS,
   SLIDER_QUESTIONS,
   TOTAL_QUESTION_COUNT,
   YES_NO_QUESTIONS,
-} from '@/constants/questions';
-import { useTheme } from '@/hooks/use-theme';
+} from "@/constants/questions";
+import { useTheme } from "@/hooks/use-theme";
 
 type PersonalityAnswers = Record<string, number | boolean>;
 
@@ -34,20 +41,21 @@ const INITIAL_ANSWERS: PersonalityAnswers = (() => {
   return answers;
 })();
 
-const TOTAL_FIELDS = 4 + TOTAL_QUESTION_COUNT;
+const TOTAL_FIELDS = 5 + TOTAL_QUESTION_COUNT;
 
 /**
- * The "create a profile" flow: basic info (name, age, occupation) followed by
- * a batch of personality questions answered with sliders and yes/no toggles.
- * For now the whole payload is printed to the console.
+ * The "create a profile" flow: basic info (name, age, occupation, description,
+ * photo) followed by a batch of personality questions answered with sliders
+ * and yes/no toggles. For now the whole payload is printed to the console.
  */
 export default function CreateProfileScreen() {
   const router = useRouter();
   const theme = useTheme();
 
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [occupation, setOccupation] = useState('');
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [answers, setAnswers] = useState<PersonalityAnswers>(INITIAL_ANSWERS);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
@@ -64,19 +72,26 @@ export default function CreateProfileScreen() {
   };
 
   const basicsAnswered =
-    [name.trim(), age.trim(), occupation.trim()].filter((value) => value.length > 0).length +
-    (photo ? 1 : 0);
+    [name.trim(), age.trim(), occupation.trim(), description.trim()].filter(
+      (value) => value.length > 0,
+    ).length + (photo ? 1 : 0);
   const answeredCount = basicsAnswered + answeredIds.size;
   const progress = answeredCount / TOTAL_FIELDS;
 
-  // Age gate: only people aged 18+ may create a profile. An empty or invalid
-  // age also blocks submission so the gate can't be bypassed.
+  // Age gate: profiles are open to adults from 18 through 125. An empty or
+  // invalid age also blocks submission so the gate can't be bypassed.
   const ageNumber = age.trim() ? Number(age.trim()) : null;
-  const hasValidAge = ageNumber !== null && Number.isFinite(ageNumber) && ageNumber >= 18;
+  const hasValidAge =
+    ageNumber !== null &&
+    Number.isFinite(ageNumber) &&
+    ageNumber >= 18 &&
+    ageNumber <= 125;
   const ageError =
     ageNumber !== null && Number.isFinite(ageNumber) && ageNumber < 18
-      ? 'You must be 18 or older to create a profile.'
-      : undefined;
+      ? "You must be 18 or older to create a profile."
+      : ageNumber !== null && Number.isFinite(ageNumber) && ageNumber > 125
+        ? "Age must be 125 or younger."
+        : undefined;
 
   const handleSubmit = () => {
     if (!name.trim() || !hasValidAge) return;
@@ -86,6 +101,7 @@ export default function CreateProfileScreen() {
         name: name.trim(),
         age: ageNumber,
         occupation: occupation.trim(),
+        description: description.trim(),
         photo: photo
           ? {
               uri: photo.uri,
@@ -105,7 +121,7 @@ export default function CreateProfileScreen() {
 
   return (
     <ThemedView style={styles.page}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -118,14 +134,21 @@ export default function CreateProfileScreen() {
                 styles.backButton,
                 { backgroundColor: theme.backgroundElement },
                 pressed && { opacity: 0.6 },
-              ]}>
+              ]}
+            >
               <ThemedText style={styles.backIcon}>←</ThemedText>
             </Pressable>
-            <ThemedText style={styles.headerTitle}>Create your profile</ThemedText>
+            <ThemedText style={styles.headerTitle}>
+              Create your profile
+            </ThemedText>
             <View style={styles.headerSpacer} />
           </View>
           <View style={styles.progressBlock}>
-            <ThemedText themeColor="textSecondary" type="small" style={styles.progressLabel}>
+            <ThemedText
+              themeColor="textSecondary"
+              type="small"
+              style={styles.progressLabel}
+            >
               {answeredCount} of {TOTAL_FIELDS} answered
             </ThemedText>
             <ProgressBar progress={progress} />
@@ -134,18 +157,20 @@ export default function CreateProfileScreen() {
 
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <ScrollView
             style={styles.flex}
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.content}>
               {submitted ? (
                 <SuccessView
                   name={name.trim()}
                   photo={photo}
                   onReview={() => setSubmitted(false)}
-                  onHome={() => router.replace('/')}
+                  onHome={() => router.replace("/")}
                 />
               ) : (
                 <>
@@ -155,13 +180,18 @@ export default function CreateProfileScreen() {
                       About you
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      The essentials — those three things everyone asks about.
+                      The essentials — plus a few words about who you are.
                     </ThemedText>
                   </View>
 
                   <ThemedView type="backgroundElement" style={styles.formCard}>
                     <PhotoUploader photo={photo} onChange={setPhoto} />
-                    <View style={[styles.formDivider, { backgroundColor: theme.backgroundSelected }]} />
+                    <View
+                      style={[
+                        styles.formDivider,
+                        { backgroundColor: theme.backgroundSelected },
+                      ]}
+                    />
 
                     <FormField
                       label="Name"
@@ -174,11 +204,13 @@ export default function CreateProfileScreen() {
                     />
                     <View style={styles.formRow}>
                       <FormField
-                        label="Age (18+)"
+                        label="Age 18+"
                         placeholder="e.g. 28"
                         placeholderTextColor={theme.textSecondary}
                         value={age}
-                        onChangeText={(text) => setAge(text.replace(/[^0-9]/g, ''))}
+                        onChangeText={(text) =>
+                          setAge(text.replace(/[^0-9]/g, ""))
+                        }
                         keyboardType="number-pad"
                         inputMode="numeric"
                         maxLength={3}
@@ -193,6 +225,19 @@ export default function CreateProfileScreen() {
                         autoCapitalize="words"
                       />
                     </View>
+
+                    <FormField
+                      label="Description"
+                      placeholder="e.g. Coffee nerd, weekend hiker, karaoke enthusiast…"
+                      placeholderTextColor={theme.textSecondary}
+                      value={description}
+                      onChangeText={setDescription}
+                      autoCapitalize="sentences"
+                      multiline
+                      numberOfLines={4}
+                      maxLength={500}
+                      textAlignVertical="top"
+                    />
                   </ThemedView>
 
                   {/* Personality — sliders */}
@@ -201,7 +246,8 @@ export default function CreateProfileScreen() {
                       Personality
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      Slide into the answers that feel most like you — there are no wrong ones.
+                      Slide into the answers that feel most like you — there are
+                      no wrong ones.
                     </ThemedText>
                   </View>
 
@@ -241,21 +287,33 @@ export default function CreateProfileScreen() {
                   {/* Submit */}
                   <View style={styles.submitBlock}>
                     <AppButton
-                      label={submitted ? 'Profile created' : 'Create profile'}
+                      label={submitted ? "Profile created" : "Create profile"}
                       variant="primary"
                       disabled={!name.trim() || !hasValidAge}
                       onPress={handleSubmit}
                     />
                     {!name.trim() ? (
-                      <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
+                      <ThemedText
+                        themeColor="textSecondary"
+                        type="small"
+                        style={styles.submitHint}
+                      >
                         Add your name to create the profile.
                       </ThemedText>
                     ) : !hasValidAge ? (
-                      <ThemedText themeColor="danger" type="small" style={styles.submitHint}>
+                      <ThemedText
+                        themeColor="danger"
+                        type="small"
+                        style={styles.submitHint}
+                      >
                         You must be 18 or older to create a profile.
                       </ThemedText>
                     ) : (
-                      <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
+                      <ThemedText
+                        themeColor="textSecondary"
+                        type="small"
+                        style={styles.submitHint}
+                      >
                         Your answers are logged to the console.
                       </ThemedText>
                     )}
@@ -294,15 +352,25 @@ function SuccessView({
         <LogoMark size={84} />
       )}
       <ThemedText type="subtitle" style={styles.successTitle}>
-        You&apos;re all set{name ? `, ${name}` : ''}!
+        You&apos;re all set{name ? `, ${name}` : ""}!
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
-        Your profile was created. Open the developer console to see your
-        answers — they&apos;re just logged there for now.
+        Your profile was created. Open the developer console to see your answers
+        — they&apos;re just logged there for now.
       </ThemedText>
       <View style={styles.successActions}>
-        <AppButton label="Back to start" variant="primary" onPress={onHome} style={styles.successButton} />
-        <AppButton label="Review answers" variant="secondary" onPress={onReview} style={styles.successButton} />
+        <AppButton
+          label="Back to start"
+          variant="primary"
+          onPress={onHome}
+          style={styles.successButton}
+        />
+        <AppButton
+          label="Review answers"
+          variant="secondary"
+          onPress={onReview}
+          style={styles.successButton}
+        />
       </View>
     </ThemedView>
   );
@@ -325,25 +393,25 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   backIcon: {
     fontSize: 20,
     lineHeight: 24,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   headerSpacer: {
     width: 40,
@@ -352,14 +420,14 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   progressLabel: {
-    textAlign: 'right',
+    textAlign: "right",
   },
   scrollContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingBottom: Spacing.six + 24,
   },
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: Layout.maxContentWidth,
     paddingHorizontal: Spacing.four,
     gap: Spacing.four,
@@ -379,11 +447,11 @@ const styles = StyleSheet.create({
   },
   formDivider: {
     height: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
   formRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.three,
   },
   submitBlock: {
@@ -391,17 +459,17 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   submitHint: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   successCard: {
     marginTop: Spacing.five,
     borderRadius: 24,
     padding: Spacing.five,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.three,
   },
   successTitle: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 26,
     lineHeight: 34,
   },
@@ -410,17 +478,17 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 42,
     borderWidth: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   successBody: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   successActions: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     gap: Spacing.two,
     marginTop: Spacing.two,
   },
   successButton: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
 });

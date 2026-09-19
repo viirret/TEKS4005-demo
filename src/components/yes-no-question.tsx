@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { ImportantToggle } from '@/components/important-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand } from '@/constants/brand';
@@ -10,12 +11,20 @@ type YesNoQuestionCardProps = {
   question: string;
   value: boolean;
   onChange: (value: boolean) => void;
+  important: boolean;
+  onImportantChange: (important: boolean) => void;
 };
 
 /**
  * A personality question answered with a Yes / No segmented control.
  */
-export function YesNoQuestionCard({ question, value, onChange }: YesNoQuestionCardProps) {
+export function YesNoQuestionCard({
+  question,
+  value,
+  onChange,
+  important,
+  onImportantChange,
+}: YesNoQuestionCardProps) {
   const theme = useTheme();
 
   return (
@@ -56,6 +65,8 @@ export function YesNoQuestionCard({ question, value, onChange }: YesNoQuestionCa
           );
         })}
       </View>
+
+      <ImportantToggle important={important} onToggle={onImportantChange} />
     </ThemedView>
   );
 }

@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { ImportantToggle } from '@/components/important-toggle';
 import { Slider } from '@/components/slider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -16,6 +17,8 @@ type SliderQuestionCardProps = {
   lowLabel: string;
   highLabel: string;
   onChange: (value: number) => void;
+  important: boolean;
+  onImportantChange: (important: boolean) => void;
 };
 
 /**
@@ -31,6 +34,8 @@ export function SliderQuestionCard({
   lowLabel,
   highLabel,
   onChange,
+  important,
+  onImportantChange,
 }: SliderQuestionCardProps) {
   const theme = useTheme();
 
@@ -62,6 +67,8 @@ export function SliderQuestionCard({
           {highLabel}
         </ThemedText>
       </View>
+
+      <ImportantToggle important={important} onToggle={onImportantChange} />
     </ThemedView>
   );
 }

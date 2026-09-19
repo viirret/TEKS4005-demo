@@ -61,6 +61,7 @@ export default function CreateProfileScreen() {
   const [photos, setPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [answers, setAnswers] = useState<PersonalityAnswers>(INITIAL_ANSWERS);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
+  const [importantIds, setImportantIds] = useState<Set<string>>(new Set());
   const [profile, setProfile] = useState<Profile | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -70,6 +71,15 @@ export default function CreateProfileScreen() {
       if (previous.has(id)) return previous;
       const next = new Set(previous);
       next.add(id);
+      return next;
+    });
+  };
+
+  const handleImportant = (id: string) => {
+    setImportantIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -110,7 +120,12 @@ export default function CreateProfileScreen() {
           fileSize: asset.fileSize ?? null,
         })),
       },
-      personality: { ...answers },
+      personality: Object.fromEntries(
+        PERSONALITY_QUESTIONS.map((question) => [
+          question.id,
+          { value: answers[question.id], important: importantIds.has(question.id) },
+        ]),
+      ),
     };
     console.log(`[${Brand.name}] New profile created:`);
     console.log(JSON.stringify(payload, null, 2));
@@ -254,6 +269,8 @@ export default function CreateProfileScreen() {
                       lowLabel={question.lowLabel}
                       highLabel={question.highLabel}
                       onChange={(value) => handleAnswer(question.id, value)}
+                      important={importantIds.has(question.id)}
+                      onImportantChange={() => handleImportant(question.id)}
                     />
                   ))}
 
@@ -273,6 +290,8 @@ export default function CreateProfileScreen() {
                       question={question.question}
                       value={answers[question.id] as boolean}
                       onChange={(value) => handleAnswer(question.id, value)}
+                      important={importantIds.has(question.id)}
+                      onImportantChange={() => handleImportant(question.id)}
                     />
                   ))}
 

@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
+import { MultipleChoiceQuestion, SingleChoiceQuestion } from '@/components/choice-question';
 import { FormField } from '@/components/form-field';
 import { LogoMark } from '@/components/logo';
 import { PhotoUploader } from '@/components/photo-uploader';
@@ -26,6 +27,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { YesNoQuestionCard } from '@/components/yes-no-question';
 import { Brand, Layout } from '@/constants/brand';
+import {
+  GENDER_OPTIONS,
+  LOOKING_FOR_OPTIONS,
+  LOOKING_FOR_PREFERENCE_VALUES,
+  PROFILE_QUESTION_COUNT,
+  type Gender,
+  type LookingFor,
+  type LookingForPreference,
+} from '@/constants/profile-questions';
 import { Spacing } from '@/constants/theme';
 import {
   PERSONALITY_QUESTIONS,
@@ -45,12 +55,13 @@ const INITIAL_ANSWERS: PersonalityAnswers = (() => {
   return answers;
 })();
 
-const TOTAL_FIELDS = 5 + TOTAL_QUESTION_COUNT;
+const TOTAL_FIELDS = 5 + PROFILE_QUESTION_COUNT + TOTAL_QUESTION_COUNT;
 
 /**
  * The "create a profile" flow: basic info (name, age, occupation, description,
- * photo) followed by a batch of personality questions answered with sliders
- * and yes/no toggles. For now the whole payload is printed to the console.
+ * photo) and profile preferences, followed by a batch of personality questions
+ * answered with sliders and yes/no toggles. For now the whole payload is printed
+ * to the console.
  */
 export default function CreateProfileScreen() {
   const router = useRouter();
@@ -60,6 +71,8 @@ export default function CreateProfileScreen() {
   const [age, setAge] = useState('');
   const [occupation, setOccupation] = useState('');
   const [description, setDescription] = useState('');
+  const [gender, setGender] = useState<Gender | null>(null);
+  const [lookingFor, setLookingFor] = useState<LookingForPreference[]>([]);
   const [photos, setPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [answers, setAnswers] = useState<PersonalityAnswers>(INITIAL_ANSWERS);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
@@ -103,6 +116,30 @@ export default function CreateProfileScreen() {
     });
   };
 
+  const allLookingForSelected = LOOKING_FOR_PREFERENCE_VALUES.every((value) =>
+    lookingFor.includes(value),
+  );
+  const lookingForChoiceValues: LookingFor[] = allLookingForSelected
+    ? [...lookingFor, 'anyone']
+    : lookingFor;
+
+  const handleLookingForChange = (values: LookingFor[]) => {
+    const anyoneWasSelected = allLookingForSelected;
+    const anyoneIsSelected = values.includes('anyone');
+
+    if (anyoneIsSelected && !anyoneWasSelected) {
+      setLookingFor([...LOOKING_FOR_PREFERENCE_VALUES]);
+      return;
+    }
+
+    if (anyoneWasSelected && !anyoneIsSelected) {
+      setLookingFor([]);
+      return;
+    }
+
+    setLookingFor(values.filter((value): value is LookingForPreference => value !== 'anyone'));
+  };
+
   const maxScroll = Math.max(0, scrollMetrics.content - scrollMetrics.viewport);
   const scrollFraction =
     maxScroll > 0 ? Math.min(1, Math.max(0, scrollMetrics.top / maxScroll)) : 0;
@@ -130,6 +167,8 @@ export default function CreateProfileScreen() {
         age: ageNumber,
         occupation: occupation.trim(),
         description: description.trim(),
+        gender,
+        lookingFor: [...lookingFor],
         photos: photos.map((asset) => ({
           uri: asset.uri,
           width: asset.width,
@@ -273,6 +312,24 @@ export default function CreateProfileScreen() {
                       numberOfLines={4}
                       maxLength={500}
                       textAlignVertical="top"
+                    />
+
+                    <View
+                      style={[styles.formDivider, { backgroundColor: theme.backgroundSelected }]}
+                    />
+
+                    <SingleChoiceQuestion
+                      question="What is your gender?"
+                      options={GENDER_OPTIONS}
+                      value={gender}
+                      onChange={setGender}
+                    />
+
+                    <MultipleChoiceQuestion
+                      question="Who are you looking for?"
+                      options={LOOKING_FOR_OPTIONS}
+                      values={lookingForChoiceValues}
+                      onChange={handleLookingForChange}
                     />
                   </ThemedView>
 

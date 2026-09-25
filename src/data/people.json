@@ -60,7 +60,7 @@
     }
   },
   {
-    "id": 2,
+    "id": 3,
     "name": "Elias Berg",
     "age": 34,
     "occupation": "Software engineer",
@@ -90,7 +90,7 @@
     }
   },
   {
-    "id": 3,
+    "id": 4,
     "name": "Priya Shah",
     "age": 27,
     "occupation": "Veterinary nurse",
@@ -120,14 +120,14 @@
     }
   },
   {
-    "id": 4,
-    "name": "Jordan Lee",
-    "age": 31,
+    "id": 5,
+    "name": "Jordan Jackson",
+    "age": 51,
     "occupation": "Illustrator and part-time teacher",
     "description": "Creative, thoughtful, and happy to spend a quiet night drawing, cooking, or wandering around a new neighborhood.",
     "gender": "man",
     "lookingFor": ["women"],
-    "photo": "JordanLee.jpeg",
+    "photo": "JordanJackson.jpeg",
     "personality": {
       "sl_energy": 40,
       "sl_spontaneity": 60,
@@ -150,7 +150,7 @@
     }
   },
   {
-    "id": 5,
+    "id": 6,
     "name": "Sofia Alvarez",
     "age": 26,
     "occupation": "Event coordinator",
@@ -180,7 +180,7 @@
     }
   },
   {
-    "id": 6,
+    "id": 7,
     "name": "Liam Connor",
     "age": 33,
     "occupation": "Landscape architect",
@@ -210,7 +210,7 @@
     }
   },
   {
-    "id": 7,
+    "id": 8,
     "name": "Noor Rahman",
     "age": 30,
     "occupation": "Research librarian",
@@ -240,7 +240,7 @@
     }
   },
   {
-    "id": 8,
+    "id": 9,
     "name": "Theo Martin",
     "age": 29,
     "occupation": "Bicycle mechanic",
@@ -270,7 +270,7 @@
     }
   },
   {
-    "id": 9,
+    "id": 10,
     "name": "Camille Dubois",
     "age": 32,
     "occupation": "Art director",
@@ -300,7 +300,7 @@
     }
   },
   {
-    "id": 10,
+    "id": 11,
     "name": "Alex Morgan",
     "age": 55,
     "occupation": "Secondary-school teacher",

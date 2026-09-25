@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { LogoMark } from '@/components/logo';
@@ -7,9 +7,9 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/** A single photo on a profile. Kept to a plain URI so the card renders both
- *  locally picked assets and, later, photos fetched from a server. */
-export type ProfilePhoto = { uri: string };
+/** A single photo on a profile. Either a plain URI (locally picked photos and,
+ *  later, photos fetched from a server) or a bundled asset from `require()`. */
+export type ProfilePhoto = ImageSource | number;
 
 /** Everything a profile shows to others. Used for the owner's own preview and,
  *  in the future, for viewing other people's profiles. */
@@ -35,7 +35,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
     <ThemedView type="backgroundElement" style={styles.card}>
       {hero ? (
         <Image
-          source={{ uri: hero.uri }}
+          source={hero}
           style={[styles.hero, { backgroundColor: theme.backgroundSelected }]}
           contentFit="cover"
           transition={150}
@@ -51,8 +51,8 @@ export function ProfileCard({ profile }: { profile: Profile }) {
         <View style={styles.grid}>
           {rest.map((photo, index) => (
             <Image
-              key={`${photo.uri}-${index}`}
-              source={{ uri: photo.uri }}
+              key={`${typeof photo === 'number' ? photo : photo.uri}-${index}`}
+              source={photo}
               style={[styles.gridImage, { backgroundColor: theme.backgroundSelected }]}
               contentFit="cover"
               transition={150}

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { rankMatches, type MatchCandidate, type MatchResult } from '@/algorithm';
 import { AppButton } from '@/components/app-button';
 import { MultipleChoiceQuestion, SingleChoiceQuestion } from '@/components/choice-question';
 import { FormField } from '@/components/form-field';
@@ -30,6 +31,7 @@ import { Brand, Layout } from '@/constants/brand';
 import {
   GENDER_OPTIONS,
   LOOKING_FOR_OPTIONS,
+  LOOKING_FOR_PREFERENCE_OPTIONS,
   LOOKING_FOR_PREFERENCE_VALUES,
   PROFILE_QUESTION_COUNT,
   type Gender,
@@ -43,9 +45,18 @@ import {
   TOTAL_QUESTION_COUNT,
   YES_NO_QUESTIONS,
 } from '@/constants/questions';
+import people from '@/data/people.json';
+import { getPersonPhoto } from '@/data/people-photos';
 import { useTheme } from '@/hooks/use-theme';
 
 type PersonalityAnswers = Record<string, number | boolean>;
+
+/** Everyone the algorithm can match the user with. */
+const CANDIDATES: MatchCandidate[] = people;
+
+/** The ranked candidates plus which one is on screen, so "another match" can
+ *  simply advance the index instead of re-running the search. */
+type MatchState = { results: MatchResult[]; index: number };
 
 const INITIAL_ANSWERS: PersonalityAnswers = (() => {
   const answers: PersonalityAnswers = {};
@@ -79,6 +90,7 @@ export default function CreateProfileScreen() {
   const [importantIds, setImportantIds] = useState<Set<string>>(new Set());
   const [profile, setProfile] = useState<Profile | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [matchState, setMatchState] = useState<MatchState | null>(null);
 
   // Progress through the flow: the bar tracks how far the user has actually
   // scrolled (each question has a default answer, so leaving one as "No" /
@@ -193,7 +205,18 @@ export default function CreateProfileScreen() {
       description: description.trim(),
       photos: photos.map((asset) => ({ uri: asset.uri })),
     });
+    // A fresh submission invalidates any matches from the previous answers.
+    setMatchState(null);
     setSubmitted(true);
+  };
+
+  const handleFindMatch = () => {
+    const results = rankMatches({ gender, lookingFor, answers }, CANDIDATES);
+    setMatchState({ results, index: 0 });
+  };
+
+  const handleNextMatch = () => {
+    setMatchState((previous) => (previous ? { ...previous, index: previous.index + 1 } : previous));
   };
 
   return (
@@ -249,6 +272,9 @@ export default function CreateProfileScreen() {
               {submitted && profile ? (
                 <SuccessView
                   profile={profile}
+                  matchState={matchState}
+                  onFindMatch={handleFindMatch}
+                  onNextMatch={handleNextMatch}
                   onReview={() => setSubmitted(false)}
                   onHome={() => router.replace('/')}
                 />
@@ -415,10 +441,16 @@ export default function CreateProfileScreen() {
 
 function SuccessView({
   profile,
+  matchState,
+  onFindMatch,
+  onNextMatch,
   onReview,
   onHome,
 }: {
   profile: Profile;
+  matchState: MatchState | null;
+  onFindMatch: () => void;
+  onNextMatch: () => void;
   onReview: () => void;
   onHome: () => void;
 }) {
@@ -426,11 +458,61 @@ function SuccessView({
   const [previewOpen, setPreviewOpen] = useState(false);
   const mainPhoto = profile.photos[0];
 
+  // A match takes over the card: the user came here to see a person, not the
+  // confirmation screen.
+  const matchIndex = matchState?.index ?? 0;
+  const matchCount = matchState?.results.length ?? 0;
+  const match = matchState?.results[matchIndex];
+  if (match) {
+    return (
+      <MatchView
+        match={match}
+        hasMore={matchIndex < matchCount - 1}
+        onNextMatch={onNextMatch}
+        onReview={onReview}
+        onHome={onHome}
+      />
+    );
+  }
+
+  if (matchState) {
+    // The search ran, but there is nothing left to show: either nobody who
+    // fits each other's preferences is in the database, or the user has seen
+    // everyone it found.
+    return (
+      <ThemedView type="backgroundElement" style={styles.successCard}>
+        <LogoMark size={72} />
+        <ThemedText type="subtitle" style={styles.successTitle}>
+          {matchCount === 0 ? 'No matches yet' : 'That&apos;s everyone for now'}
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.successBody}>
+          {matchCount === 0
+            ? 'Nobody who fits your preferences is looking for someone like you. Try adding another gender to what you are looking for.'
+            : 'You&apos;ve seen everyone who fits each other&apos;s preferences. Change your answers to meet someone new.'}
+        </ThemedText>
+        <View style={styles.successActions}>
+          <AppButton
+            label="Review answers"
+            variant="primary"
+            onPress={onReview}
+            style={styles.successButton}
+          />
+          <AppButton
+            label="Back to start"
+            variant="secondary"
+            onPress={onHome}
+            style={styles.successButton}
+          />
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView type="backgroundElement" style={styles.successCard}>
       {mainPhoto ? (
         <Image
-          source={{ uri: mainPhoto.uri }}
+          source={mainPhoto}
           style={[styles.successAvatar, { borderColor: Brand.primary }]}
           contentFit="cover"
           transition={150}
@@ -442,26 +524,31 @@ function SuccessView({
         You&apos;re all set, {profile.name}!
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
-        Your profile was created. Open the developer console to see your answers — they&apos;re just
-        logged there for now.
+        Your profile was created. Find out who you&apos;d click right with.
       </ThemedText>
       <View style={styles.successActions}>
         <AppButton
-          label="View my profile"
+          label="Find me a match"
           variant="primary"
-          onPress={() => setPreviewOpen(true)}
+          onPress={onFindMatch}
           style={styles.successButton}
         />
         <AppButton
-          label="Back to start"
+          label="View my profile"
           variant="secondary"
-          onPress={onHome}
+          onPress={() => setPreviewOpen(true)}
           style={styles.successButton}
         />
         <AppButton
           label="Review answers"
           variant="ghost"
           onPress={onReview}
+          style={styles.successButton}
+        />
+        <AppButton
+          label="Back to start"
+          variant="ghost"
+          onPress={onHome}
           style={styles.successButton}
         />
       </View>
@@ -508,6 +595,90 @@ function SuccessView({
           </ThemedView>
         </View>
       </Modal>
+    </ThemedView>
+  );
+}
+
+/** `'men'` -> `'Men'`, `'men, non-binary-people'` -> `'Men, Non-binary people'`. */
+function formatPreferences(lookingFor: string[]): string {
+  return lookingFor
+    .map((value) => LOOKING_FOR_PREFERENCE_OPTIONS.find((option) => option.value === value)?.label)
+    .filter((label) => label !== undefined)
+    .join(', ');
+}
+
+/**
+ * The person the algorithm picked: their profile, how well the two sets of
+ * answers line up, and — if the ranking holds more candidates — a way through
+ * to the next one.
+ */
+function MatchView({
+  match,
+  hasMore,
+  onNextMatch,
+  onReview,
+  onHome,
+}: {
+  match: MatchResult;
+  hasMore: boolean;
+  onNextMatch: () => void;
+  onReview: () => void;
+  onHome: () => void;
+}) {
+  const { candidate, score } = match;
+  const photo = getPersonPhoto(candidate.photo);
+  const matchProfile: Profile = {
+    name: candidate.name,
+    age: candidate.age,
+    occupation: candidate.occupation,
+    description: candidate.description,
+    photos: photo ? [photo] : [],
+  };
+  // The preferences the candidate was matched on, so it is clear the match
+  // works both ways.
+  const candidatePreferences = formatPreferences(candidate.lookingFor);
+
+  return (
+    <ThemedView type="backgroundElement" style={styles.successCard}>
+      <ThemedText themeColor="textSecondary" type="smallBold" style={styles.matchEyebrow}>
+        {score}% MATCH
+      </ThemedText>
+      <ThemedText type="subtitle" style={styles.successTitle}>
+        Meet {candidate.name}
+      </ThemedText>
+      <ThemedText themeColor="textSecondary" style={styles.successBody}>
+        You both answered the questions in a similar way.
+      </ThemedText>
+      <View style={styles.matchCard}>
+        <ProfileCard profile={matchProfile} />
+        {candidatePreferences ? (
+          <ThemedText themeColor="textSecondary" type="small" style={styles.matchPreferences}>
+            Also looking for {candidatePreferences.toLowerCase()}
+          </ThemedText>
+        ) : null}
+      </View>
+      <View style={styles.successActions}>
+        {hasMore ? (
+          <AppButton
+            label="See another match"
+            variant="primary"
+            onPress={onNextMatch}
+            style={styles.successButton}
+          />
+        ) : null}
+        <AppButton
+          label="Review answers"
+          variant={hasMore ? 'secondary' : 'primary'}
+          onPress={onReview}
+          style={styles.successButton}
+        />
+        <AppButton
+          label="Back to start"
+          variant="ghost"
+          onPress={onHome}
+          style={styles.successButton}
+        />
+      </View>
     </ThemedView>
   );
 }
@@ -617,6 +788,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   successBody: {
+    textAlign: 'center',
+  },
+  matchEyebrow: {
+    textAlign: 'center',
+    letterSpacing: 1.5,
+  },
+  matchCard: {
+    alignSelf: 'stretch',
+    gap: Spacing.two,
+  },
+  matchPreferences: {
     textAlign: 'center',
   },
   successActions: {

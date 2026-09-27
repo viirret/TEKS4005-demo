@@ -84,6 +84,8 @@ export default function CreateProfileScreen() {
   const [description, setDescription] = useState('');
   const [gender, setGender] = useState<Gender | null>(null);
   const [lookingFor, setLookingFor] = useState<LookingForPreference[]>([]);
+  const [genderTouched, setGenderTouched] = useState(false);
+  const [lookingForTouched, setLookingForTouched] = useState(false);
   const [photos, setPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [answers, setAnswers] = useState<PersonalityAnswers>(INITIAL_ANSWERS);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
@@ -128,6 +130,11 @@ export default function CreateProfileScreen() {
     });
   };
 
+  const handleGenderChange = (value: Gender) => {
+    setGender(value);
+    setGenderTouched(true);
+  };
+
   const allLookingForSelected = LOOKING_FOR_PREFERENCE_VALUES.every((value) =>
     lookingFor.includes(value),
   );
@@ -136,6 +143,7 @@ export default function CreateProfileScreen() {
     : lookingFor;
 
   const handleLookingForChange = (values: LookingFor[]) => {
+    setLookingForTouched(true);
     const anyoneWasSelected = allLookingForSelected;
     const anyoneIsSelected = values.includes('anyone');
 
@@ -170,8 +178,33 @@ export default function CreateProfileScreen() {
         ? 'Age must be 125 or younger.'
         : undefined;
 
+  // Gender and "who are you looking for" drive the matching in both directions,
+  // so an unanswered question leaves nothing to check candidates against. Both
+  // are therefore mandatory. The inline errors only appear once the user has
+  // touched the question, so the form doesn't open up scolding them for
+  // questions they have not scrolled to yet.
+  const hasGender = gender !== null;
+  const hasLookingFor = lookingFor.length > 0;
+  const genderError =
+    !hasGender && genderTouched ? 'Please select your gender to continue.' : undefined;
+  const lookingForError =
+    !hasLookingFor && lookingForTouched
+      ? 'Please select at least one option, or "Anyone".'
+      : undefined;
+
+  // Everything still standing between the user and a profile, in the order the
+  // questions appear on the page.
+  const missingRequirements = [
+    !name.trim() ? 'add your name' : null,
+    !hasValidAge ? (ageError ?? 'add your age (18 or older)') : null,
+    !hasGender ? 'select your gender' : null,
+    !hasLookingFor ? 'select who you are looking for' : null,
+  ].filter((requirement): requirement is string => requirement !== null);
+
+  const canSubmit = name.trim().length > 0 && hasValidAge && hasGender && hasLookingFor;
+
   const handleSubmit = () => {
-    if (!name.trim() || !hasValidAge) return;
+    if (!canSubmit) return;
     const payload = {
       app: Brand.name,
       profile: {
@@ -348,7 +381,9 @@ export default function CreateProfileScreen() {
                       question="What is your gender?"
                       options={GENDER_OPTIONS}
                       value={gender}
-                      onChange={setGender}
+                      onChange={handleGenderChange}
+                      required
+                      error={genderError}
                     />
 
                     <MultipleChoiceQuestion
@@ -356,6 +391,8 @@ export default function CreateProfileScreen() {
                       options={LOOKING_FOR_OPTIONS}
                       values={lookingForChoiceValues}
                       onChange={handleLookingForChange}
+                      required
+                      error={lookingForError}
                     />
                   </ThemedView>
 
@@ -412,16 +449,16 @@ export default function CreateProfileScreen() {
                     <AppButton
                       label={submitted ? 'Profile created' : 'Create profile'}
                       variant="primary"
-                      disabled={!name.trim() || !hasValidAge}
+                      disabled={!canSubmit}
                       onPress={handleSubmit}
                     />
-                    {!name.trim() ? (
-                      <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
-                        Add your name to create the profile.
-                      </ThemedText>
-                    ) : !hasValidAge ? (
-                      <ThemedText themeColor="danger" type="small" style={styles.submitHint}>
-                        You must be 18 or older to create a profile.
+                    {missingRequirements.length > 0 ? (
+                      <ThemedText
+                        themeColor={ageError ? 'danger' : 'textSecondary'}
+                        type="small"
+                        style={styles.submitHint}
+                      >
+                        Still needed: {joinList(missingRequirements)}.
                       </ThemedText>
                     ) : (
                       <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
@@ -597,6 +634,12 @@ function SuccessView({
       </Modal>
     </ThemedView>
   );
+}
+
+/** `['a']` -> `'a'`, `['a', 'b']` -> `'a and b'`, `['a', 'b', 'c']` -> `'a, b and c'`. */
+function joinList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
 /** `'men'` -> `'Men'`, `'men, non-binary-people'` -> `'Men, Non-binary people'`. */

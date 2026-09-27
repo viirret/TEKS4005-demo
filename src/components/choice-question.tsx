@@ -15,6 +15,10 @@ type SingleChoiceQuestionProps<Value extends string> = {
   options: readonly ChoiceOption<Value>[];
   value: Value | null;
   onChange: (value: Value) => void;
+  /** Marks the question as mandatory: it has to be answered to continue. */
+  required?: boolean;
+  /** Error message shown under the options in the danger color. */
+  error?: string;
 };
 
 type MultipleChoiceQuestionProps<Value extends string> = {
@@ -22,6 +26,10 @@ type MultipleChoiceQuestionProps<Value extends string> = {
   options: readonly ChoiceOption<Value>[];
   values: readonly Value[];
   onChange: (values: Value[]) => void;
+  /** Marks the question as mandatory: it has to be answered to continue. */
+  required?: boolean;
+  /** Error message shown under the options in the danger color. */
+  error?: string;
 };
 
 /**
@@ -32,11 +40,15 @@ export function SingleChoiceQuestion<Value extends string>({
   options,
   value,
   onChange,
+  required = false,
+  error,
 }: SingleChoiceQuestionProps<Value>) {
   return (
     <ChoiceQuestion
       question={question}
       instruction="Select one"
+      required={required}
+      error={error}
       accessibilityRole="radiogroup"
       options={options}
       isSelected={(option) => value === option.value}
@@ -53,11 +65,15 @@ export function MultipleChoiceQuestion<Value extends string>({
   options,
   values,
   onChange,
+  required = false,
+  error,
 }: MultipleChoiceQuestionProps<Value>) {
   return (
     <ChoiceQuestion
       question={question}
       instruction="Select all that apply"
+      required={required}
+      error={error}
       options={options}
       isSelected={(option) => values.includes(option.value)}
       onPress={(option) =>
@@ -74,6 +90,8 @@ export function MultipleChoiceQuestion<Value extends string>({
 type ChoiceQuestionProps<Value extends string> = {
   question: string;
   instruction: string;
+  required?: boolean;
+  error?: string;
   accessibilityRole?: 'radiogroup';
   options: readonly ChoiceOption<Value>[];
   isSelected: (option: ChoiceOption<Value>) => boolean;
@@ -83,6 +101,8 @@ type ChoiceQuestionProps<Value extends string> = {
 function ChoiceQuestion<Value extends string>({
   question,
   instruction,
+  required = false,
+  error,
   accessibilityRole,
   options,
   isSelected,
@@ -95,7 +115,7 @@ function ChoiceQuestion<Value extends string>({
       <View style={styles.heading}>
         <ThemedText style={styles.questionText}>{question}</ThemedText>
         <ThemedText themeColor="textSecondary" type="small">
-          {instruction}
+          {required ? `${instruction} · Required` : instruction}
         </ThemedText>
       </View>
 
@@ -140,6 +160,12 @@ function ChoiceQuestion<Value extends string>({
           );
         })}
       </View>
+
+      {error ? (
+        <ThemedText themeColor="danger" type="small" style={styles.error}>
+          {error}
+        </ThemedText>
+      ) : null}
     </View>
   );
 }
@@ -176,6 +202,10 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     textAlign: 'center',
+  },
+  error: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   pressed: {
     opacity: 0.7,

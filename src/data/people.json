@@ -5,8 +5,8 @@
     "age": 18,
     "occupation": "",
     "description": "You didn't answer the questions, didn't you.",
-    "gender": "",
-    "lookingFor": [],
+    "gender": "woman",
+    "lookingFor": ["men", "women", "non-binary-people"],
     "photo": "",
     "personality": {
       "sl_energy": 50,

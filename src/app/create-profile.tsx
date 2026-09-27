@@ -15,7 +15,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { rankMatches, type MatchCandidate, type MatchResult } from '@/algorithm';
+import {
+  rankMatches,
+  IMPORTANT_QUESTION_WEIGHT,
+  type MatchCandidate,
+  type MatchResult,
+} from '@/algorithm';
 import { AppButton } from '@/components/app-button';
 import { MultipleChoiceQuestion, SingleChoiceQuestion } from '@/components/choice-question';
 import { FormField } from '@/components/form-field';
@@ -244,7 +249,7 @@ export default function CreateProfileScreen() {
   };
 
   const handleFindMatch = () => {
-    const results = rankMatches({ gender, lookingFor, answers }, CANDIDATES);
+    const results = rankMatches({ gender, lookingFor, answers, importantIds }, CANDIDATES);
     setMatchState({ results, index: 0 });
   };
 
@@ -402,7 +407,9 @@ export default function CreateProfileScreen() {
                       Personality
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      Slide into the answers that feel most like you — there are no wrong ones.
+                      Slide into the answers that feel most like you — there are no wrong ones. Star
+                      the ones that matter and they count {IMPORTANT_QUESTION_WEIGHT}× more when
+                      ranking matches.
                     </ThemedText>
                   </View>
 

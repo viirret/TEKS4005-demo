@@ -11,7 +11,8 @@
  *     user's gender ("men only" can never return a woman, and a man looking
  *     for men can only meet men who are also looking for men).
  *  2. Ranking — the survivors are scored by how similar their personality
- *     answers are to the user's, best first.
+ *     answers are to the user's, best first. Questions the user marked as
+ *     important weigh `IMPORTANT_QUESTION_WEIGHT` times as much as the rest.
  */
 
 import { PERSONALITY_QUESTIONS } from '@/constants/questions';
@@ -41,6 +42,8 @@ export type MatchSeeker = {
   gender: string | null;
   lookingFor: string[];
   answers: PersonalityAnswers;
+  /** Ids of the questions the user starred; each one counts for more. */
+  importantIds: ReadonlySet<string>;
 };
 
 export type MatchResult = {
@@ -48,6 +51,24 @@ export type MatchResult = {
   /** Similarity between the two sets of answers, 0–100. */
   score: number;
 };
+
+/**
+ * What a question the user has not marked as important is worth in the score.
+ */
+const NORMAL_QUESTION_WEIGHT = 1;
+
+/**
+ * What a question the user marked as important is worth instead. At 10, one
+ * important question outweighs nine ordinary ones: a single disagreement on a
+ * starred question costs more than nine ordinary disagreements put together,
+ * so starring a question really does decide who comes out on top.
+ */
+export const IMPORTANT_QUESTION_WEIGHT = 10;
+
+/** The weight of a question in the score, given the user's stars. */
+function questionWeight(id: string, importantIds: ReadonlySet<string>): number {
+  return importantIds.has(id) ? IMPORTANT_QUESTION_WEIGHT : NORMAL_QUESTION_WEIGHT;
+}
 
 /** The "who are you looking for" option that stands for each gender. */
 const PREFERENCE_BY_GENDER: Record<string, string> = {
@@ -102,10 +123,15 @@ function answerSimilarity(mine: number | boolean, theirs: number | boolean, rang
 
 /**
  * Similarity between the user's answers and a candidate's, as a percentage.
- * Every question counts the same, so the score is the average similarity
- * across the questions both of them answered.
+ * The score is a weighted mean similarity across the questions both of them
+ * answered: each question counts once, except the ones the user marked as
+ * important, which count `IMPORTANT_QUESTION_WEIGHT` times.
  */
-export function scoreCandidate(answers: PersonalityAnswers, candidate: MatchCandidate): number {
+export function scoreCandidate(
+  answers: PersonalityAnswers,
+  candidate: MatchCandidate,
+  importantIds: ReadonlySet<string>,
+): number {
   let similarity = 0;
   let counted = 0;
 
@@ -115,8 +141,9 @@ export function scoreCandidate(answers: PersonalityAnswers, candidate: MatchCand
     if (mine === undefined || theirs === undefined) continue;
 
     const range = question.type === 'slider' ? question.max - question.min : 0;
-    similarity += answerSimilarity(mine, theirs, range);
-    counted += 1;
+    const weight = questionWeight(question.id, importantIds);
+    similarity += answerSimilarity(mine, theirs, range) * weight;
+    counted += weight;
   }
 
   if (counted === 0) return 0;
@@ -133,6 +160,9 @@ export function rankMatches(seeker: MatchSeeker, candidates: MatchCandidate[]): 
     .filter(
       (candidate) => userWantsCandidate(seeker, candidate) && candidateWantsUser(seeker, candidate),
     )
-    .map((candidate) => ({ candidate, score: scoreCandidate(seeker.answers, candidate) }))
+    .map((candidate) => ({
+      candidate,
+      score: scoreCandidate(seeker.answers, candidate, seeker.importantIds),
+    }))
     .sort((a, b) => b.score - a.score);
 }

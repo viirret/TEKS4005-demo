@@ -15,7 +15,7 @@
  *     important weigh `IMPORTANT_QUESTION_WEIGHT` times as much as the rest.
  */
 
-import { PERSONALITY_QUESTIONS } from '@/constants/questions';
+import { PERSONALITY_QUESTIONS, YES_NO_QUESTIONS, type YesNoQuestion } from '@/constants/questions';
 
 /** Answers keyed by question id, matching the shape stored in the payload. */
 export type PersonalityAnswers = Record<string, number | boolean>;
@@ -148,6 +148,49 @@ export function scoreCandidate(
 
   if (counted === 0) return 0;
   return Math.round((similarity / counted) * 100);
+}
+
+/**
+ * How many shared yes/no answers are worth putting on a card. The point is a
+ * couple of quick reasons to look at this person, not the whole comparison, so
+ * the list is deliberately short.
+ */
+export const MAX_SHARED_YES_NO_ANSWERS = 3;
+
+/** The yes/no questions two people answered the same way, split by their answer. */
+export type SharedYesNoAnswers = {
+  /** The questions they both answered "Yes" to. */
+  yes: YesNoQuestion[];
+  /** The questions they both answered "No" to. */
+  no: YesNoQuestion[];
+};
+
+/**
+ * The yes/no questions the user and a candidate answered the same way, split
+ * into the ones they both said yes to and the ones they both said no to —
+ * the concrete "here is what you agree on" behind the score. It reads the same
+ * answers the score is built from, so the two never contradict each other.
+ *
+ * Questions the user starred come first, since those are the ones they most
+ * want to agree on; the rest keep the order they were asked in.
+ */
+export function sharedYesNoAnswers(
+  answers: PersonalityAnswers,
+  candidate: MatchCandidate,
+  importantIds: ReadonlySet<string>,
+): SharedYesNoAnswers {
+  const agreed = YES_NO_QUESTIONS.filter((question) => {
+    const mine = answers[question.id];
+    return typeof mine === 'boolean' && mine === candidate.personality[question.id];
+  }).sort(
+    (a, b) => Number(importantIds.has(b.id)) - Number(importantIds.has(a.id)), // stable: keeps question order within a group
+  );
+
+  const kept = agreed.slice(0, MAX_SHARED_YES_NO_ANSWERS);
+  return {
+    yes: kept.filter((question) => answers[question.id] === true),
+    no: kept.filter((question) => answers[question.id] === false),
+  };
 }
 
 /**

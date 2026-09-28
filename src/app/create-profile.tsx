@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   rankMatches,
+  sharedYesNoAnswers,
   IMPORTANT_QUESTION_WEIGHT,
   type MatchCandidate,
   type MatchResult,
@@ -36,7 +37,6 @@ import { Brand, Layout } from '@/constants/brand';
 import {
   GENDER_OPTIONS,
   LOOKING_FOR_OPTIONS,
-  LOOKING_FOR_PREFERENCE_OPTIONS,
   LOOKING_FOR_PREFERENCE_VALUES,
   PROFILE_QUESTION_COUNT,
   type Gender,
@@ -49,6 +49,7 @@ import {
   SLIDER_QUESTIONS,
   TOTAL_QUESTION_COUNT,
   YES_NO_QUESTIONS,
+  type YesNoQuestion,
 } from '@/constants/questions';
 import people from '@/data/people.json';
 import { getPersonPhoto } from '@/data/people-photos';
@@ -56,12 +57,16 @@ import { useTheme } from '@/hooks/use-theme';
 
 type PersonalityAnswers = Record<string, number | boolean>;
 
-/** Everyone the algorithm can match the user with. */
+/** Everyone the algorithm can suggest. */
 const CANDIDATES: MatchCandidate[] = people;
 
-/** The ranked candidates plus which one is on screen, so "another match" can
- *  simply advance the index instead of re-running the search. */
-type MatchState = { results: MatchResult[]; index: number };
+/** The ranked candidates plus which one is on screen, so "another suggestion"
+ *  can simply advance the index instead of re-running the search. */
+type SuggestionState = { results: MatchResult[]; index: number };
+
+/** From this score up, the two sets of answers really do look alike, so the
+ *  card says so instead of hedging. */
+const SIMILAR_ENOUGH_SCORE = 50;
 
 const INITIAL_ANSWERS: PersonalityAnswers = (() => {
   const answers: PersonalityAnswers = {};
@@ -97,7 +102,7 @@ export default function CreateProfileScreen() {
   const [importantIds, setImportantIds] = useState<Set<string>>(new Set());
   const [profile, setProfile] = useState<Profile | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [matchState, setMatchState] = useState<MatchState | null>(null);
+  const [suggestionState, setSuggestionState] = useState<SuggestionState | null>(null);
 
   // Progress through the flow: the bar tracks how far the user has actually
   // scrolled (each question has a default answer, so leaving one as "No" /
@@ -243,18 +248,20 @@ export default function CreateProfileScreen() {
       description: description.trim(),
       photos: photos.map((asset) => ({ uri: asset.uri })),
     });
-    // A fresh submission invalidates any matches from the previous answers.
-    setMatchState(null);
+    // A fresh submission invalidates any suggestions from the previous answers.
+    setSuggestionState(null);
     setSubmitted(true);
   };
 
-  const handleFindMatch = () => {
+  const handleFindSuggestions = () => {
     const results = rankMatches({ gender, lookingFor, answers, importantIds }, CANDIDATES);
-    setMatchState({ results, index: 0 });
+    setSuggestionState({ results, index: 0 });
   };
 
-  const handleNextMatch = () => {
-    setMatchState((previous) => (previous ? { ...previous, index: previous.index + 1 } : previous));
+  const handleNextSuggestion = () => {
+    setSuggestionState((previous) =>
+      previous ? { ...previous, index: previous.index + 1 } : previous,
+    );
   };
 
   return (
@@ -310,9 +317,11 @@ export default function CreateProfileScreen() {
               {submitted && profile ? (
                 <SuccessView
                   profile={profile}
-                  matchState={matchState}
-                  onFindMatch={handleFindMatch}
-                  onNextMatch={handleNextMatch}
+                  suggestionState={suggestionState}
+                  answers={answers}
+                  importantIds={importantIds}
+                  onFindSuggestions={handleFindSuggestions}
+                  onNextSuggestion={handleNextSuggestion}
                   onReview={() => setSubmitted(false)}
                   onHome={() => router.replace('/')}
                 />
@@ -409,7 +418,7 @@ export default function CreateProfileScreen() {
                     <ThemedText themeColor="textSecondary" type="small">
                       Slide into the answers that feel most like you — there are no wrong ones. Star
                       the ones that matter and they count {IMPORTANT_QUESTION_WEIGHT}× more when
-                      ranking matches.
+                      ranking suggestions.
                     </ThemedText>
                   </View>
 
@@ -485,16 +494,20 @@ export default function CreateProfileScreen() {
 
 function SuccessView({
   profile,
-  matchState,
-  onFindMatch,
-  onNextMatch,
+  suggestionState,
+  answers,
+  importantIds,
+  onFindSuggestions,
+  onNextSuggestion,
   onReview,
   onHome,
 }: {
   profile: Profile;
-  matchState: MatchState | null;
-  onFindMatch: () => void;
-  onNextMatch: () => void;
+  suggestionState: SuggestionState | null;
+  answers: PersonalityAnswers;
+  importantIds: ReadonlySet<string>;
+  onFindSuggestions: () => void;
+  onNextSuggestion: () => void;
   onReview: () => void;
   onHome: () => void;
 }) {
@@ -502,24 +515,26 @@ function SuccessView({
   const [previewOpen, setPreviewOpen] = useState(false);
   const mainPhoto = profile.photos[0];
 
-  // A match takes over the card: the user came here to see a person, not the
-  // confirmation screen.
-  const matchIndex = matchState?.index ?? 0;
-  const matchCount = matchState?.results.length ?? 0;
-  const match = matchState?.results[matchIndex];
-  if (match) {
+  // A suggestion takes over the card: the user came here to see a person, not
+  // the confirmation screen.
+  const suggestionIndex = suggestionState?.index ?? 0;
+  const suggestionCount = suggestionState?.results.length ?? 0;
+  const suggestion = suggestionState?.results[suggestionIndex];
+  if (suggestion) {
     return (
-      <MatchView
-        match={match}
-        hasMore={matchIndex < matchCount - 1}
-        onNextMatch={onNextMatch}
+      <SuggestionView
+        suggestion={suggestion}
+        answers={answers}
+        importantIds={importantIds}
+        hasMore={suggestionIndex < suggestionCount - 1}
+        onNextSuggestion={onNextSuggestion}
         onReview={onReview}
         onHome={onHome}
       />
     );
   }
 
-  if (matchState) {
+  if (suggestionState) {
     // The search ran, but there is nothing left to show: either nobody who
     // fits each other's preferences is in the database, or the user has seen
     // everyone it found.
@@ -527,12 +542,12 @@ function SuccessView({
       <ThemedView type="backgroundElement" style={styles.successCard}>
         <LogoMark size={72} />
         <ThemedText type="subtitle" style={styles.successTitle}>
-          {matchCount === 0 ? 'No matches yet' : 'That&apos;s everyone for now'}
+          {suggestionCount === 0 ? 'No suggestions yet' : 'That&apos;s everyone for now'}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.successBody}>
-          {matchCount === 0
+          {suggestionCount === 0
             ? 'Nobody who fits your preferences is looking for someone like you. Try adding another gender to what you are looking for.'
-            : 'You&apos;ve seen everyone who fits each other&apos;s preferences. Change your answers to meet someone new.'}
+            : 'You&apos;ve seen every suggestion we had for you. Change your answers to meet someone new.'}
         </ThemedText>
         <View style={styles.successActions}>
           <AppButton
@@ -572,9 +587,9 @@ function SuccessView({
       </ThemedText>
       <View style={styles.successActions}>
         <AppButton
-          label="Find me a match"
+          label="Show me suggestions"
           variant="primary"
-          onPress={onFindMatch}
+          onPress={onFindSuggestions}
           style={styles.successButton}
         />
         <AppButton
@@ -649,70 +664,93 @@ function joinList(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
-/** `'men'` -> `'Men'`, `'men, non-binary-people'` -> `'Men, Non-binary people'`. */
-function formatPreferences(lookingFor: string[]): string {
-  return lookingFor
-    .map((value) => LOOKING_FOR_PREFERENCE_OPTIONS.find((option) => option.value === value)?.label)
-    .filter((label) => label !== undefined)
-    .join(', ');
+/**
+ * One "you both said yes/no to" block: a label and the yes/no questions it
+ * covers.
+ */
+function SharedAnswerList({ label, questions }: { label: string; questions: YesNoQuestion[] }) {
+  return (
+    <View style={styles.sharedGroup}>
+      <ThemedText type="smallBold" style={styles.sharedLabel}>
+        {label}
+      </ThemedText>
+      {questions.map((question) => (
+        <ThemedText key={question.id} themeColor="textSecondary" type="small">
+          • {question.question}
+        </ThemedText>
+      ))}
+    </View>
+  );
 }
 
 /**
- * The person the algorithm picked: their profile, how well the two sets of
- * answers line up, and — if the ranking holds more candidates — a way through
- * to the next one.
+ * One person the algorithm suggests: their profile, how well the two sets of
+ * answers line up, the yes/no questions they answered the same way, and — if
+ * the ranking holds more candidates — a way through to the next suggestion.
  */
-function MatchView({
-  match,
+function SuggestionView({
+  suggestion,
+  answers,
+  importantIds,
   hasMore,
-  onNextMatch,
+  onNextSuggestion,
   onReview,
   onHome,
 }: {
-  match: MatchResult;
+  suggestion: MatchResult;
+  answers: PersonalityAnswers;
+  importantIds: ReadonlySet<string>;
   hasMore: boolean;
-  onNextMatch: () => void;
+  onNextSuggestion: () => void;
   onReview: () => void;
   onHome: () => void;
 }) {
-  const { candidate, score } = match;
+  const { candidate, score } = suggestion;
   const photo = getPersonPhoto(candidate.photo);
-  const matchProfile: Profile = {
+  const suggestionProfile: Profile = {
     name: candidate.name,
     age: candidate.age,
     occupation: candidate.occupation,
     description: candidate.description,
     photos: photo ? [photo] : [],
   };
-  // The preferences the candidate was matched on, so it is clear the match
-  // works both ways.
-  const candidatePreferences = formatPreferences(candidate.lookingFor);
+  // The yes/no questions they answered the same way, so the score comes with
+  // something concrete behind it.
+  const shared = sharedYesNoAnswers(answers, candidate, importantIds);
 
   return (
     <ThemedView type="backgroundElement" style={styles.successCard}>
-      <ThemedText themeColor="textSecondary" type="smallBold" style={styles.matchEyebrow}>
+      <ThemedText themeColor="textSecondary" type="smallBold" style={styles.suggestionEyebrow}>
         {score}% MATCH
       </ThemedText>
       <ThemedText type="subtitle" style={styles.successTitle}>
         Meet {candidate.name}
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
-        You both answered the questions in a similar way.
+        {score >= SIMILAR_ENOUGH_SCORE
+          ? 'You both answered the questions in a similar way.'
+          : 'You two answered the questions pretty differently, so this one is more of a maybe.'}
       </ThemedText>
-      <View style={styles.matchCard}>
-        <ProfileCard profile={matchProfile} />
-        {candidatePreferences ? (
-          <ThemedText themeColor="textSecondary" type="small" style={styles.matchPreferences}>
-            Also looking for {candidatePreferences.toLowerCase()}
+      <View style={styles.suggestionCard}>
+        <ProfileCard profile={suggestionProfile} />
+        {shared.yes.length > 0 ? (
+          <SharedAnswerList label="You both said yes to" questions={shared.yes} />
+        ) : null}
+        {shared.no.length > 0 ? (
+          <SharedAnswerList label="You both said no to" questions={shared.no} />
+        ) : null}
+        {shared.yes.length === 0 && shared.no.length === 0 ? (
+          <ThemedText themeColor="textSecondary" type="small">
+            Not a single yes/no question lined up, so the similarity comes from the sliders.
           </ThemedText>
         ) : null}
       </View>
       <View style={styles.successActions}>
         {hasMore ? (
           <AppButton
-            label="See another match"
+            label="See another suggestion"
             variant="primary"
-            onPress={onNextMatch}
+            onPress={onNextSuggestion}
             style={styles.successButton}
           />
         ) : null}
@@ -840,16 +878,19 @@ const styles = StyleSheet.create({
   successBody: {
     textAlign: 'center',
   },
-  matchEyebrow: {
+  suggestionEyebrow: {
     textAlign: 'center',
     letterSpacing: 1.5,
   },
-  matchCard: {
+  suggestionCard: {
     alignSelf: 'stretch',
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
-  matchPreferences: {
-    textAlign: 'center',
+  sharedGroup: {
+    gap: Spacing.one,
+  },
+  sharedLabel: {
+    letterSpacing: 0.5,
   },
   successActions: {
     alignSelf: 'stretch',

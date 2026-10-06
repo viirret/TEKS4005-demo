@@ -1,6 +1,7 @@
 import { Image, type ImageSource } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { LogoMark } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -28,6 +29,7 @@ export type Profile = {
  */
 export function ProfileCard({ profile }: { profile: Profile }) {
   const theme = useTheme();
+  const { t } = useI18n();
 
   const [hero, ...rest] = profile.photos;
 
@@ -39,7 +41,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           style={[styles.hero, { backgroundColor: theme.backgroundSelected }]}
           contentFit="cover"
           transition={150}
-          accessibilityLabel={`${profile.name}'s main photo`}
+          accessibilityLabel={t('photos.profileMain', { name: profile.name })}
         />
       ) : (
         <View style={[styles.hero, styles.heroPlaceholder, { backgroundColor: theme.tintSoft }]}>
@@ -56,7 +58,10 @@ export function ProfileCard({ profile }: { profile: Profile }) {
               style={[styles.gridImage, { backgroundColor: theme.backgroundSelected }]}
               contentFit="cover"
               transition={150}
-              accessibilityLabel={`${profile.name}'s photo ${index + 2}`}
+              accessibilityLabel={t('photos.profileOther', {
+                name: profile.name,
+                number: index + 2,
+              })}
             />
           ))}
         </View>

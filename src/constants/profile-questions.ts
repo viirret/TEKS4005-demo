@@ -5,21 +5,21 @@
  */
 
 export const GENDER_OPTIONS = [
-  { value: 'man', label: 'Man' },
-  { value: 'woman', label: 'Woman' },
-  { value: 'non-binary', label: 'Non-binary' },
-  { value: 'dont-want-to-say', label: "Don't want to say" },
+  { value: 'man', label: 'gender.man' },
+  { value: 'woman', label: 'gender.woman' },
+  { value: 'non-binary', label: 'gender.nonBinary' },
+  { value: 'dont-want-to-say', label: 'gender.private' },
 ] as const;
 
 export type Gender = (typeof GENDER_OPTIONS)[number]['value'];
 
 export const LOOKING_FOR_PREFERENCE_OPTIONS = [
-  { value: 'men', label: 'Men' },
-  { value: 'women', label: 'Women' },
-  { value: 'non-binary-people', label: 'Non-binary people' },
+  { value: 'men', label: 'lookingFor.men' },
+  { value: 'women', label: 'lookingFor.women' },
+  { value: 'non-binary-people', label: 'lookingFor.nonBinary' },
 ] as const;
 
-export const ANYONE_OPTION = { value: 'anyone', label: 'Anyone' } as const;
+export const ANYONE_OPTION = { value: 'anyone', label: 'lookingFor.anyone' } as const;
 
 export const LOOKING_FOR_OPTIONS = [...LOOKING_FOR_PREFERENCE_OPTIONS, ANYONE_OPTION] as const;
 

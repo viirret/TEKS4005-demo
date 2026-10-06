@@ -22,6 +22,8 @@ import {
   type MatchCandidate,
   type MatchResult,
 } from '@/algorithm';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useI18n } from '@/i18n';
 import { AppButton } from '@/components/app-button';
 import { MultipleChoiceQuestion, SingleChoiceQuestion } from '@/components/choice-question';
 import { FormField } from '@/components/form-field';
@@ -87,6 +89,7 @@ const TOTAL_FIELDS = 5 + PROFILE_QUESTION_COUNT + TOTAL_QUESTION_COUNT;
 export default function CreateProfileScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t, joinList } = useI18n();
 
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -183,9 +186,9 @@ export default function CreateProfileScreen() {
     ageNumber !== null && Number.isFinite(ageNumber) && ageNumber >= 18 && ageNumber <= 125;
   const ageError =
     ageNumber !== null && Number.isFinite(ageNumber) && ageNumber < 18
-      ? 'You must be 18 or older to create a profile.'
+      ? t('validation.young')
       : ageNumber !== null && Number.isFinite(ageNumber) && ageNumber > 125
-        ? 'Age must be 125 or younger.'
+        ? t('validation.old')
         : undefined;
 
   // Gender and "who are you looking for" drive the matching in both directions,
@@ -195,20 +198,17 @@ export default function CreateProfileScreen() {
   // questions they have not scrolled to yet.
   const hasGender = gender !== null;
   const hasLookingFor = lookingFor.length > 0;
-  const genderError =
-    !hasGender && genderTouched ? 'Please select your gender to continue.' : undefined;
+  const genderError = !hasGender && genderTouched ? t('validation.gender') : undefined;
   const lookingForError =
-    !hasLookingFor && lookingForTouched
-      ? 'Please select at least one option, or "Anyone".'
-      : undefined;
+    !hasLookingFor && lookingForTouched ? t('validation.lookingFor') : undefined;
 
   // Everything still standing between the user and a profile, in the order the
   // questions appear on the page.
   const missingRequirements = [
-    !name.trim() ? 'add your name' : null,
-    !hasValidAge ? (ageError ?? 'add your age (18 or older)') : null,
-    !hasGender ? 'select your gender' : null,
-    !hasLookingFor ? 'select who you are looking for' : null,
+    !name.trim() ? t('requirements.name') : null,
+    !hasValidAge ? (ageError ?? t('requirements.age')) : null,
+    !hasGender ? t('requirements.gender') : null,
+    !hasLookingFor ? t('requirements.lookingFor') : null,
   ].filter((requirement): requirement is string => requirement !== null);
 
   const canSubmit = name.trim().length > 0 && hasValidAge && hasGender && hasLookingFor;
@@ -272,7 +272,7 @@ export default function CreateProfileScreen() {
           <View style={styles.headerRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.back')}
               hitSlop={12}
               onPress={() => router.back()}
               style={({ pressed }) => [
@@ -283,13 +283,13 @@ export default function CreateProfileScreen() {
             >
               <ThemedText style={styles.backIcon}>←</ThemedText>
             </Pressable>
-            <ThemedText style={styles.headerTitle}>Create your profile</ThemedText>
-            <View style={styles.headerSpacer} />
+            <ThemedText style={styles.headerTitle}>{t('profile.title')}</ThemedText>
+            <LanguageSwitcher />
           </View>
           {!submitted && (
             <View style={styles.progressBlock}>
               <ThemedText themeColor="textSecondary" type="small" style={styles.progressLabel}>
-                {progressSteps} of {TOTAL_FIELDS} complete
+                {t('profile.progress', { count: progressSteps, total: TOTAL_FIELDS })}
               </ThemedText>
               <ProgressBar progress={progress} />
             </View>
@@ -330,10 +330,10 @@ export default function CreateProfileScreen() {
                   {/* Basic info */}
                   <View style={styles.sectionHeader}>
                     <ThemedText type="subtitle" style={styles.sectionTitle}>
-                      About you
+                      {t('profile.about')}
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      The essentials — plus a few words about who you are.
+                      {t('profile.aboutHint')}
                     </ThemedText>
                   </View>
 
@@ -344,8 +344,8 @@ export default function CreateProfileScreen() {
                     />
 
                     <FormField
-                      label="Name"
-                      placeholder="e.g. Alex"
+                      label={t('profile.name')}
+                      placeholder={t('profile.namePlaceholder')}
                       placeholderTextColor={theme.textSecondary}
                       value={name}
                       onChangeText={setName}
@@ -354,8 +354,8 @@ export default function CreateProfileScreen() {
                     />
                     <View style={styles.formRow}>
                       <FormField
-                        label="Age 18+"
-                        placeholder="e.g. 28"
+                        label={t('profile.age')}
+                        placeholder={t('profile.agePlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                         value={age}
                         onChangeText={(text) => setAge(text.replace(/[^0-9]/g, ''))}
@@ -365,8 +365,8 @@ export default function CreateProfileScreen() {
                         error={ageError}
                       />
                       <FormField
-                        label="Occupation"
-                        placeholder="e.g. Barista"
+                        label={t('profile.occupation')}
+                        placeholder={t('profile.occupationPlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                         value={occupation}
                         onChangeText={setOccupation}
@@ -375,8 +375,8 @@ export default function CreateProfileScreen() {
                     </View>
 
                     <FormField
-                      label="Description"
-                      placeholder="e.g. Coffee nerd, weekend hiker, karaoke enthusiast…"
+                      label={t('profile.description')}
+                      placeholder={t('profile.descriptionPlaceholder')}
                       placeholderTextColor={theme.textSecondary}
                       value={description}
                       onChangeText={setDescription}
@@ -392,8 +392,11 @@ export default function CreateProfileScreen() {
                     />
 
                     <SingleChoiceQuestion
-                      question="What is your gender?"
-                      options={GENDER_OPTIONS}
+                      question={t('profile.gender')}
+                      options={GENDER_OPTIONS.map((option) => ({
+                        ...option,
+                        label: t(option.label),
+                      }))}
                       value={gender}
                       onChange={handleGenderChange}
                       required
@@ -401,8 +404,11 @@ export default function CreateProfileScreen() {
                     />
 
                     <MultipleChoiceQuestion
-                      question="Who are you looking for?"
-                      options={LOOKING_FOR_OPTIONS}
+                      question={t('profile.lookingFor')}
+                      options={LOOKING_FOR_OPTIONS.map((option) => ({
+                        ...option,
+                        label: t(option.label),
+                      }))}
                       values={lookingForChoiceValues}
                       onChange={handleLookingForChange}
                       required
@@ -413,25 +419,23 @@ export default function CreateProfileScreen() {
                   {/* Personality — sliders */}
                   <View style={styles.sectionHeader}>
                     <ThemedText type="subtitle" style={styles.sectionTitle}>
-                      Personality
+                      {t('personality.title')}
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      Slide into the answers that feel most like you — there are no wrong ones. Star
-                      the ones that matter and they count {IMPORTANT_QUESTION_WEIGHT}× more when
-                      ranking suggestions.
+                      {t('personality.hint', { weight: IMPORTANT_QUESTION_WEIGHT })}
                     </ThemedText>
                   </View>
 
                   {SLIDER_QUESTIONS.map((question) => (
                     <SliderQuestionCard
                       key={question.id}
-                      question={question.question}
+                      question={t(question.question)}
                       value={answers[question.id] as number}
                       min={question.min}
                       max={question.max}
                       step={question.step}
-                      lowLabel={question.lowLabel}
-                      highLabel={question.highLabel}
+                      lowLabel={t(question.lowLabel)}
+                      highLabel={t(question.highLabel)}
                       onChange={(value) => handleAnswer(question.id, value)}
                       important={importantIds.has(question.id)}
                       onImportantChange={() => handleImportant(question.id)}
@@ -442,17 +446,17 @@ export default function CreateProfileScreen() {
                   {/* Personality — yes / no */}
                   <View style={styles.sectionHeader}>
                     <ThemedText type="subtitle" style={styles.sectionTitle}>
-                      Quick yes or no
+                      {t('personality.quick')}
                     </ThemedText>
                     <ThemedText themeColor="textSecondary" type="small">
-                      No overthinking — first instinct wins.
+                      {t('personality.quickHint')}
                     </ThemedText>
                   </View>
 
                   {YES_NO_QUESTIONS.map((question) => (
                     <YesNoQuestionCard
                       key={question.id}
-                      question={question.question}
+                      question={t(question.question)}
                       value={answers[question.id] as boolean}
                       onChange={(value) => handleAnswer(question.id, value)}
                       important={importantIds.has(question.id)}
@@ -463,7 +467,7 @@ export default function CreateProfileScreen() {
                   {/* Submit */}
                   <View style={styles.submitBlock}>
                     <AppButton
-                      label={submitted ? 'Profile created' : 'Create profile'}
+                      label={submitted ? t('profile.created') : t('profile.create')}
                       variant="primary"
                       disabled={!canSubmit}
                       onPress={handleSubmit}
@@ -474,11 +478,11 @@ export default function CreateProfileScreen() {
                         type="small"
                         style={styles.submitHint}
                       >
-                        Still needed: {joinList(missingRequirements)}.
+                        {t('profile.missing', { requirements: joinList(missingRequirements) })}
                       </ThemedText>
                     ) : (
                       <ThemedText themeColor="textSecondary" type="small" style={styles.submitHint}>
-                        Your answers are logged to the console.
+                        {t('profile.logged')}
                       </ThemedText>
                     )}
                   </View>
@@ -512,6 +516,7 @@ function SuccessView({
   onHome: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useI18n();
   const [previewOpen, setPreviewOpen] = useState(false);
   const mainPhoto = profile.photos[0];
 
@@ -542,22 +547,20 @@ function SuccessView({
       <ThemedView type="backgroundElement" style={styles.successCard}>
         <LogoMark size={72} />
         <ThemedText type="subtitle" style={styles.successTitle}>
-          {suggestionCount === 0 ? 'No suggestions yet' : 'That&apos;s everyone for now'}
+          {suggestionCount === 0 ? t('success.empty') : t('success.finished')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.successBody}>
-          {suggestionCount === 0
-            ? 'Nobody who fits your preferences is looking for someone like you. Try adding another gender to what you are looking for.'
-            : 'You&apos;ve seen every suggestion we had for you. Change your answers to meet someone new.'}
+          {suggestionCount === 0 ? t('success.emptyHint') : t('success.finishedHint')}
         </ThemedText>
         <View style={styles.successActions}>
           <AppButton
-            label="Review answers"
+            label={t('success.review')}
             variant="primary"
             onPress={onReview}
             style={styles.successButton}
           />
           <AppButton
-            label="Back to start"
+            label={t('success.home')}
             variant="secondary"
             onPress={onHome}
             style={styles.successButton}
@@ -580,32 +583,32 @@ function SuccessView({
         <LogoMark size={84} />
       )}
       <ThemedText type="subtitle" style={styles.successTitle}>
-        You&apos;re all set, {profile.name}!
+        {t('success.ready', { name: profile.name })}
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
-        Your profile was created. Find out who you&apos;d click right with.
+        {t('success.body')}
       </ThemedText>
       <View style={styles.successActions}>
         <AppButton
-          label="Show me suggestions"
+          label={t('success.suggestions')}
           variant="primary"
           onPress={onFindSuggestions}
           style={styles.successButton}
         />
         <AppButton
-          label="View my profile"
+          label={t('success.view')}
           variant="secondary"
           onPress={() => setPreviewOpen(true)}
           style={styles.successButton}
         />
         <AppButton
-          label="Review answers"
+          label={t('success.review')}
           variant="ghost"
           onPress={onReview}
           style={styles.successButton}
         />
         <AppButton
-          label="Back to start"
+          label={t('success.home')}
           variant="ghost"
           onPress={onHome}
           style={styles.successButton}
@@ -621,10 +624,10 @@ function SuccessView({
         <View style={styles.modalBackdrop}>
           <ThemedView style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <ThemedText style={styles.modalTitle}>Your profile</ThemedText>
+              <ThemedText style={styles.modalTitle}>{t('success.profile')}</ThemedText>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Close profile preview"
+                accessibilityLabel={t('success.closePreview')}
                 hitSlop={12}
                 onPress={() => setPreviewOpen(false)}
                 style={({ pressed }) => [
@@ -646,7 +649,7 @@ function SuccessView({
             </ScrollView>
 
             <AppButton
-              label="Close"
+              label={t('common.close')}
               variant="secondary"
               onPress={() => setPreviewOpen(false)}
               style={styles.successButton}
@@ -658,17 +661,12 @@ function SuccessView({
   );
 }
 
-/** `['a']` -> `'a'`, `['a', 'b']` -> `'a and b'`, `['a', 'b', 'c']` -> `'a, b and c'`. */
-function joinList(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
-}
-
 /**
  * One "you both said yes/no to" block: a label and the yes/no questions it
  * covers.
  */
 function SharedAnswerList({ label, questions }: { label: string; questions: YesNoQuestion[] }) {
+  const { t } = useI18n();
   return (
     <View style={styles.sharedGroup}>
       <ThemedText type="smallBold" style={styles.sharedLabel}>
@@ -676,7 +674,7 @@ function SharedAnswerList({ label, questions }: { label: string; questions: YesN
       </ThemedText>
       {questions.map((question) => (
         <ThemedText key={question.id} themeColor="textSecondary" type="small">
-          • {question.question}
+          • {t(question.question)}
         </ThemedText>
       ))}
     </View>
@@ -705,6 +703,7 @@ function SuggestionView({
   onReview: () => void;
   onHome: () => void;
 }) {
+  const { t } = useI18n();
   const { candidate, score } = suggestion;
   const photo = getPersonPhoto(candidate.photo);
   const suggestionProfile: Profile = {
@@ -721,47 +720,45 @@ function SuggestionView({
   return (
     <ThemedView type="backgroundElement" style={styles.successCard}>
       <ThemedText themeColor="textSecondary" type="smallBold" style={styles.suggestionEyebrow}>
-        {score}% MATCH
+        {t('match.score', { score })}
       </ThemedText>
       <ThemedText type="subtitle" style={styles.successTitle}>
-        Meet {candidate.name}
+        {t('match.meet', { name: candidate.name })}
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.successBody}>
-        {score >= SIMILAR_ENOUGH_SCORE
-          ? 'You both answered the questions in a similar way.'
-          : 'You two answered the questions pretty differently, so this one is more of a maybe.'}
+        {score >= SIMILAR_ENOUGH_SCORE ? t('match.similar') : t('match.different')}
       </ThemedText>
       <View style={styles.suggestionCard}>
         <ProfileCard profile={suggestionProfile} />
         {shared.yes.length > 0 ? (
-          <SharedAnswerList label="You both said yes to" questions={shared.yes} />
+          <SharedAnswerList label={t('match.yes')} questions={shared.yes} />
         ) : null}
         {shared.no.length > 0 ? (
-          <SharedAnswerList label="You both said no to" questions={shared.no} />
+          <SharedAnswerList label={t('match.no')} questions={shared.no} />
         ) : null}
         {shared.yes.length === 0 && shared.no.length === 0 ? (
           <ThemedText themeColor="textSecondary" type="small">
-            Not a single yes/no question lined up, so the similarity comes from the sliders.
+            {t('match.noShared')}
           </ThemedText>
         ) : null}
       </View>
       <View style={styles.successActions}>
         {hasMore ? (
           <AppButton
-            label="See another suggestion"
+            label={t('match.another')}
             variant="primary"
             onPress={onNextSuggestion}
             style={styles.successButton}
           />
         ) : null}
         <AppButton
-          label="Review answers"
+          label={t('success.review')}
           variant={hasMore ? 'secondary' : 'primary'}
           onPress={onReview}
           style={styles.successButton}
         />
         <AppButton
-          label="Back to start"
+          label={t('success.home')}
           variant="ghost"
           onPress={onHome}
           style={styles.successButton}
@@ -791,6 +788,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Spacing.two,
   },
   backButton: {
     width: 40,
@@ -805,11 +803,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   headerTitle: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 18,
     fontWeight: '700',
-  },
-  headerSpacer: {
-    width: 40,
   },
   progressBlock: {
     gap: Spacing.two,

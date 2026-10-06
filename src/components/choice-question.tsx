@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { ThemedText } from '@/components/themed-text';
 import { Brand } from '@/constants/brand';
 import { Spacing } from '@/constants/theme';
@@ -43,10 +44,11 @@ export function SingleChoiceQuestion<Value extends string>({
   required = false,
   error,
 }: SingleChoiceQuestionProps<Value>) {
+  const { t } = useI18n();
   return (
     <ChoiceQuestion
       question={question}
-      instruction="Select one"
+      instruction={t('choice.one')}
       required={required}
       error={error}
       accessibilityRole="radiogroup"
@@ -68,10 +70,11 @@ export function MultipleChoiceQuestion<Value extends string>({
   required = false,
   error,
 }: MultipleChoiceQuestionProps<Value>) {
+  const { t } = useI18n();
   return (
     <ChoiceQuestion
       question={question}
-      instruction="Select all that apply"
+      instruction={t('choice.many')}
       required={required}
       error={error}
       options={options}
@@ -109,13 +112,14 @@ function ChoiceQuestion<Value extends string>({
   onPress,
 }: ChoiceQuestionProps<Value>) {
   const theme = useTheme();
+  const { t } = useI18n();
 
   return (
     <View style={styles.question}>
       <View style={styles.heading}>
         <ThemedText style={styles.questionText}>{question}</ThemedText>
         <ThemedText themeColor="textSecondary" type="small">
-          {required ? `${instruction} · Required` : instruction}
+          {required ? t('choice.required', { instruction }) : instruction}
         </ThemedText>
       </View>
 

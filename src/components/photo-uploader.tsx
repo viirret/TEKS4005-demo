@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { ThemedText } from '@/components/themed-text';
 import { Brand } from '@/constants/brand';
 import { Spacing } from '@/constants/theme';
@@ -22,6 +23,7 @@ type PhotoUploaderProps = {
  */
 export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
   const theme = useTheme();
+  const { t } = useI18n();
 
   const pickPhotos = async () => {
     try {
@@ -54,7 +56,7 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
       {photos.length === 0 ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Add photos"
+          accessibilityLabel={t('photos.add')}
           onPress={pickPhotos}
           style={({ pressed }) => [
             styles.addButtonEmpty,
@@ -67,7 +69,7 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
         >
           <ThemedText style={styles.addGlyph}>＋</ThemedText>
           <ThemedText themeColor="textSecondary" type="smallBold">
-            Add photos
+            {t('photos.add')}
           </ThemedText>
         </Pressable>
       ) : (
@@ -82,12 +84,12 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
               />
               {index === 0 && (
                 <View style={styles.mainBadge}>
-                  <ThemedText style={styles.mainBadgeLabel}>Main</ThemedText>
+                  <ThemedText style={styles.mainBadgeLabel}>{t('photos.main')}</ThemedText>
                 </View>
               )}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Remove photo ${index + 1}`}
+                accessibilityLabel={t('photos.remove', { number: index + 1 })}
                 hitSlop={8}
                 onPress={() => removePhoto(index)}
                 style={({ pressed }) => [
@@ -104,7 +106,7 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
           {photos.length < MAX_PHOTOS && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Add photos"
+              accessibilityLabel={t('photos.add')}
               onPress={pickPhotos}
               style={({ pressed }) => [
                 styles.tile,
@@ -118,7 +120,7 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
             >
               <ThemedText style={styles.addGlyph}>＋</ThemedText>
               <ThemedText themeColor="textSecondary" type="small">
-                Add
+                {t('photos.addShort')}
               </ThemedText>
             </Pressable>
           )}
@@ -127,8 +129,8 @@ export function PhotoUploader({ photos, onChange }: PhotoUploaderProps) {
 
       <ThemedText themeColor="textSecondary" type="small" style={styles.hint}>
         {photos.length > 0
-          ? `${photos.length} of ${MAX_PHOTOS} photos — the first one is your main photo.`
-          : `Add up to ${MAX_PHOTOS} photos so people can see more of you.`}
+          ? t('photos.count', { count: photos.length, max: MAX_PHOTOS })
+          : t('photos.hint', { max: MAX_PHOTOS })}
       </ThemedText>
     </View>
   );

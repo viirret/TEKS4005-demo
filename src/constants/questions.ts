@@ -1,3 +1,5 @@
+import type { TranslationKey } from '@/i18n/translations';
+
 /**
  * The personality questions used in the "create a profile" flow.
  *
@@ -9,11 +11,11 @@
 export type SliderQuestion = {
   id: string;
   type: 'slider';
-  question: string;
+  question: TranslationKey;
   /** Short label shown under the left end of the slider. */
-  lowLabel: string;
+  lowLabel: TranslationKey;
   /** Short label shown under the right end of the slider. */
-  highLabel: string;
+  highLabel: TranslationKey;
   min: number;
   max: number;
   step: number;
@@ -23,7 +25,7 @@ export type SliderQuestion = {
 export type YesNoQuestion = {
   id: string;
   type: 'yesno';
-  question: string;
+  question: TranslationKey;
   defaultValue: boolean;
 };
 
@@ -33,9 +35,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_energy',
     type: 'slider',
-    question: "I'm the life of the party.",
-    lowLabel: 'Homebody',
-    highLabel: 'Life of the party',
+    question: 'questions.sl_energy.question',
+    lowLabel: 'questions.sl_energy.lowLabel',
+    highLabel: 'questions.sl_energy.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -44,9 +46,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_spontaneity',
     type: 'slider',
-    question: 'I prefer to go with the flow.',
-    lowLabel: 'Planner',
-    highLabel: 'Spontaneous',
+    question: 'questions.sl_spontaneity.question',
+    lowLabel: 'questions.sl_spontaneity.lowLabel',
+    highLabel: 'questions.sl_spontaneity.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -55,9 +57,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_adventure',
     type: 'slider',
-    question: 'How adventurous are you?',
-    lowLabel: 'Home sweet home',
-    highLabel: 'Born explorer',
+    question: 'questions.sl_adventure.question',
+    lowLabel: 'questions.sl_adventure.lowLabel',
+    highLabel: 'questions.sl_adventure.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -66,9 +68,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_social',
     type: 'slider',
-    question: 'Where do you fall on the introvert–extrovert scale?',
-    lowLabel: 'Introvert',
-    highLabel: 'Extrovert',
+    question: 'questions.sl_social.question',
+    lowLabel: 'questions.sl_social.lowLabel',
+    highLabel: 'questions.sl_social.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -77,9 +79,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_foodie',
     type: 'slider',
-    question: "I'm a foodie at heart.",
-    lowLabel: 'Eat to live',
-    highLabel: 'Live to eat',
+    question: 'questions.sl_foodie.question',
+    lowLabel: 'questions.sl_foodie.lowLabel',
+    highLabel: 'questions.sl_foodie.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -88,9 +90,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_fitness',
     type: 'slider',
-    question: 'How important is staying active to you?',
-    lowLabel: 'Couch vibes',
-    highLabel: 'Fitness first',
+    question: 'questions.sl_fitness.question',
+    lowLabel: 'questions.sl_fitness.lowLabel',
+    highLabel: 'questions.sl_fitness.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -99,9 +101,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_tidiness',
     type: 'slider',
-    question: 'How tidy is your living space?',
-    lowLabel: 'Organized chaos',
-    highLabel: 'Marie Kondo',
+    question: 'questions.sl_tidiness.question',
+    lowLabel: 'questions.sl_tidiness.lowLabel',
+    highLabel: 'questions.sl_tidiness.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -110,9 +112,9 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
   {
     id: 'sl_competitiveness',
     type: 'slider',
-    question: 'How competitive are you, really?',
-    lowLabel: 'All for fun',
-    highLabel: 'Must win',
+    question: 'questions.sl_competitiveness.question',
+    lowLabel: 'questions.sl_competitiveness.lowLabel',
+    highLabel: 'questions.sl_competitiveness.highLabel',
     min: 0,
     max: 100,
     step: 5,
@@ -121,49 +123,64 @@ export const SLIDER_QUESTIONS: SliderQuestion[] = [
 ];
 
 export const YES_NO_QUESTIONS: YesNoQuestion[] = [
-  { id: 'yn_morning', type: 'yesno', question: 'Are you a morning person?', defaultValue: false },
+  {
+    id: 'yn_morning',
+    type: 'yesno',
+    question: 'questions.yn_morning.question',
+    defaultValue: false,
+  },
   {
     id: 'yn_pets',
     type: 'yesno',
-    question: 'Do you have (or dream of) pets?',
+    question: 'questions.yn_pets.question',
     defaultValue: false,
   },
   {
     id: 'yn_serious',
     type: 'yesno',
-    question: 'Are you looking for something serious?',
+    question: 'questions.yn_serious.question',
     defaultValue: false,
   },
-  { id: 'yn_cooking', type: 'yesno', question: 'Can you cook a great meal?', defaultValue: false },
+  {
+    id: 'yn_cooking',
+    type: 'yesno',
+    question: 'questions.yn_cooking.question',
+    defaultValue: false,
+  },
   {
     id: 'yn_hiking',
     type: 'yesno',
-    question: 'Would you go on a hiking date?',
+    question: 'questions.yn_hiking.question',
     defaultValue: false,
   },
-  { id: 'yn_surprises', type: 'yesno', question: 'Do you love surprises?', defaultValue: false },
+  {
+    id: 'yn_surprises',
+    type: 'yesno',
+    question: 'questions.yn_surprises.question',
+    defaultValue: false,
+  },
   {
     id: 'yn_karaoke',
     type: 'yesno',
-    question: 'Is karaoke a good first date?',
+    question: 'questions.yn_karaoke.question',
     defaultValue: false,
   },
   {
     id: 'yn_move',
     type: 'yesno',
-    question: 'Would you cross an ocean for love?',
+    question: 'questions.yn_move.question',
     defaultValue: false,
   },
   {
     id: 'yn_planning',
     type: 'yesno',
-    question: 'Do you plan your weekends in advance?',
+    question: 'questions.yn_planning.question',
     defaultValue: false,
   },
   {
     id: 'yn_dancefloor',
     type: 'yesno',
-    question: 'Are you the first one on the dance floor?',
+    question: 'questions.yn_dancefloor.question',
     defaultValue: false,
   },
 ];

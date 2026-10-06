@@ -1,10 +1,10 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { ImportantToggle } from '@/components/important-toggle';
 import { Slider } from '@/components/slider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand } from '@/constants/brand';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -41,6 +41,7 @@ export function SliderQuestionCard({
   answered,
 }: SliderQuestionCardProps) {
   const theme = useTheme();
+  const { t } = useI18n();
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
@@ -65,7 +66,7 @@ export function SliderQuestionCard({
         step={step}
         onValueChange={onChange}
         active={answered}
-        accessibilityLabel={`${question} value ${value} of ${max}`}
+        accessibilityLabel={t('personality.value', { question, value, max })}
       />
 
       <View style={styles.labelsRow}>

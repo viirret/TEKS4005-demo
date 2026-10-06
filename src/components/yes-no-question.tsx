@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { ImportantToggle } from '@/components/important-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -26,6 +27,7 @@ export function YesNoQuestionCard({
   onImportantChange,
 }: YesNoQuestionCardProps) {
   const theme = useTheme();
+  const { t } = useI18n();
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
@@ -37,8 +39,8 @@ export function YesNoQuestionCard({
       >
         {(
           [
-            { key: true, label: 'Yes' },
-            { key: false, label: 'No' },
+            { key: true, label: t('common.yes') },
+            { key: false, label: t('common.no') },
           ] as const
         ).map((option) => {
           const selected = value === option.key;

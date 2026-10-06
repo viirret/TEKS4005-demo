@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,12 +16,13 @@ type ImportantToggleProps = {
  */
 export function ImportantToggle({ important, onToggle }: ImportantToggleProps) {
   const theme = useTheme();
+  const { t } = useI18n();
 
   return (
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: important }}
-      accessibilityLabel={important ? 'Marked as important' : 'Mark as important'}
+      accessibilityLabel={important ? t('important.marked') : t('important.mark')}
       onPress={() => onToggle(!important)}
       style={({ pressed }) => [
         styles.pill,
@@ -33,7 +35,7 @@ export function ImportantToggle({ important, onToggle }: ImportantToggleProps) {
         {important ? '★' : '☆'}
       </ThemedText>
       <ThemedText type="smallBold" themeColor={important ? 'tint' : 'textSecondary'}>
-        {important ? 'Important' : 'Mark as important'}
+        {important ? t('important.label') : t('important.mark')}
       </ThemedText>
     </Pressable>
   );

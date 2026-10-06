@@ -9,8 +9,6 @@
 export const Brand = {
   /** App name shown in the UI. */
   name: 'Found',
-  /** Short tagline shown under the logo. */
-  tagline: 'Find your person.',
   /** Primary brand color — used for filled buttons, sliders, selected pills. */
   primary: '#E0245E',
   /** Darker brand color for pressed / active button states. */

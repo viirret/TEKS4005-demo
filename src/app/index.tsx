@@ -2,6 +2,8 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useI18n } from '@/i18n';
 import { AppButton } from '@/components/app-button';
 import { LogoMark } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
@@ -17,6 +19,7 @@ import { useTheme } from '@/hooks/use-theme';
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useI18n();
 
   return (
     <ThemedView style={styles.page}>
@@ -37,24 +40,27 @@ export default function HomeScreen() {
           ]}
         />
 
+        <View style={styles.header}>
+          <LanguageSwitcher />
+        </View>
         <View style={styles.content}>
           <View style={styles.hero}>
             <LogoMark size={128} />
             <ThemedText style={styles.appName}>{Brand.name}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.tagline}>
-              {Brand.tagline}
+              {t('home.tagline')}
             </ThemedText>
           </View>
 
           <View style={styles.actions}>
             <AppButton
-              label="Create a profile"
+              label={t('home.create')}
               variant="primary"
               style={styles.actionButton}
               onPress={() => router.push('/create-profile')}
             />
             <AppButton
-              label="Sign in"
+              label={t('home.signIn')}
               variant="secondary"
               style={styles.actionButton}
               onPress={() => {
@@ -70,7 +76,7 @@ export default function HomeScreen() {
             accessibilityRole="link"
           >
             <ThemedText themeColor="textSecondary" type="small">
-              New here? The questions take ~2 minutes ♥
+              {t('home.hint')}
             </ThemedText>
           </Pressable>
         </View>
@@ -87,6 +93,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     overflow: 'hidden',
+  },
+  header: {
+    alignSelf: 'stretch',
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
   },
   content: {
     flex: 1,

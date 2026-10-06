@@ -18,10 +18,14 @@ An [Expo](https://expo.dev) (SDK 57) demo app built with `expo-router`, running 
   - **10 yes/no questions** and the option to mark questions as important
   - A live completion progress bar
   - On submit, the profile and answers (including photo metadata) are **logged to
-    the console**; you can preview your profile and browse ranked suggestions
-    from the bundled demo profiles
+    the console** and the app opens the signed-in home
+- **Signed-in home** — open Matches, Suggestions, or your own profile; Sign out
+  returns to the landing screen. Matches is empty for now. Suggestions shows
+  only the top three compatible bundled demo profiles, one at a time. Your
+  profile includes a way to review and edit your answers.
 
-This is a UI demo: sign-in is a no-op, and profiles are not sent to a server.
+This is a UI demo: sign-in is a no-op, Sign out simply returns to the start,
+and profiles are not sent to a server.
 
 ## Get started
 

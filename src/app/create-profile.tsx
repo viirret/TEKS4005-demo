@@ -1,10 +1,9 @@
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -65,10 +64,12 @@ const CANDIDATES: MatchCandidate[] = people;
 /** The ranked candidates plus which one is on screen, so "another suggestion"
  *  can simply advance the index instead of re-running the search. */
 type SuggestionState = { results: MatchResult[]; index: number };
+type PostProfileView = 'home' | 'matches' | 'suggestions' | 'profile';
 
 /** From this score up, the two sets of answers really do look alike, so the
  *  card says so instead of hedging. */
 const SIMILAR_ENOUGH_SCORE = 50;
+const MAX_SUGGESTIONS = 3;
 
 const INITIAL_ANSWERS: PersonalityAnswers = (() => {
   const answers: PersonalityAnswers = {};
@@ -106,6 +107,12 @@ export default function CreateProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [suggestionState, setSuggestionState] = useState<SuggestionState | null>(null);
+  const [postProfileView, setPostProfileView] = useState<PostProfileView>('home');
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [submitted, postProfileView]);
 
   // Progress through the flow: the bar tracks how far the user has actually
   // scrolled (each question has a default answer, so leaving one as "No" /
@@ -248,14 +255,20 @@ export default function CreateProfileScreen() {
       description: description.trim(),
       photos: photos.map((asset) => ({ uri: asset.uri })),
     });
-    // A fresh submission invalidates any suggestions from the previous answers.
-    setSuggestionState(null);
+    setSuggestionState({
+      results: rankMatches({ gender, lookingFor, answers, importantIds }, CANDIDATES).slice(
+        0,
+        MAX_SUGGESTIONS,
+      ),
+      index: 0,
+    });
+    setPostProfileView('home');
     setSubmitted(true);
   };
 
   const handleFindSuggestions = () => {
-    const results = rankMatches({ gender, lookingFor, answers, importantIds }, CANDIDATES);
-    setSuggestionState({ results, index: 0 });
+    setSuggestionState((previous) => (previous ? { ...previous, index: 0 } : previous));
+    setPostProfileView('suggestions');
   };
 
   const handleNextSuggestion = () => {
@@ -270,20 +283,36 @@ export default function CreateProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('common.back')}
-              hitSlop={12}
-              onPress={() => router.back()}
-              style={({ pressed }) => [
-                styles.backButton,
-                { backgroundColor: theme.backgroundElement },
-                pressed && { opacity: 0.6 },
-              ]}
-            >
-              <ThemedText style={styles.backIcon}>←</ThemedText>
-            </Pressable>
-            <ThemedText style={styles.headerTitle}>{t('profile.title')}</ThemedText>
+            {!submitted || postProfileView !== 'home' ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={submitted ? t('dashboard.back') : t('common.back')}
+                hitSlop={12}
+                onPress={() => (submitted ? setPostProfileView('home') : router.back())}
+                style={({ pressed }) => [
+                  styles.backButton,
+                  { backgroundColor: theme.backgroundElement },
+                  pressed && { opacity: 0.6 },
+                ]}
+              >
+                <ThemedText style={styles.backIcon}>←</ThemedText>
+              </Pressable>
+            ) : (
+              <View style={styles.backButton} />
+            )}
+            {submitted && postProfileView === 'home' ? (
+              <View style={styles.headerTitleSpacer} />
+            ) : (
+              <ThemedText style={styles.headerTitle} numberOfLines={1}>
+                {submitted
+                  ? postProfileView === 'matches'
+                    ? t('dashboard.matches')
+                    : postProfileView === 'profile'
+                      ? t('success.profile')
+                      : t('success.suggestions')
+                  : t('profile.title')}
+              </ThemedText>
+            )}
             <LanguageSwitcher />
           </View>
           {!submitted && (
@@ -301,6 +330,7 @@ export default function CreateProfileScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
+            ref={scrollRef}
             style={styles.flex}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -315,15 +345,17 @@ export default function CreateProfileScreen() {
           >
             <View style={styles.content}>
               {submitted && profile ? (
-                <SuccessView
+                <SignedInView
                   profile={profile}
                   suggestionState={suggestionState}
+                  view={postProfileView}
                   answers={answers}
                   importantIds={importantIds}
                   onFindSuggestions={handleFindSuggestions}
                   onNextSuggestion={handleNextSuggestion}
+                  onView={setPostProfileView}
                   onReview={() => setSubmitted(false)}
-                  onHome={() => router.replace('/')}
+                  onSignOut={() => router.replace('/')}
                 />
               ) : (
                 <>
@@ -496,76 +528,99 @@ export default function CreateProfileScreen() {
   );
 }
 
-function SuccessView({
+function SignedInView({
   profile,
   suggestionState,
+  view,
   answers,
   importantIds,
   onFindSuggestions,
   onNextSuggestion,
+  onView,
   onReview,
-  onHome,
+  onSignOut,
 }: {
   profile: Profile;
   suggestionState: SuggestionState | null;
+  view: PostProfileView;
   answers: PersonalityAnswers;
   importantIds: ReadonlySet<string>;
   onFindSuggestions: () => void;
   onNextSuggestion: () => void;
+  onView: (view: PostProfileView) => void;
   onReview: () => void;
-  onHome: () => void;
+  onSignOut: () => void;
 }) {
-  const theme = useTheme();
   const { t } = useI18n();
-  const [previewOpen, setPreviewOpen] = useState(false);
   const mainPhoto = profile.photos[0];
-
-  // A suggestion takes over the card: the user came here to see a person, not
-  // the confirmation screen.
+  const results = suggestionState?.results ?? [];
   const suggestionIndex = suggestionState?.index ?? 0;
-  const suggestionCount = suggestionState?.results.length ?? 0;
-  const suggestion = suggestionState?.results[suggestionIndex];
-  if (suggestion) {
+  const suggestion = results[suggestionIndex];
+
+  if (view === 'profile') {
     return (
-      <SuggestionView
-        suggestion={suggestion}
-        answers={answers}
-        importantIds={importantIds}
-        hasMore={suggestionIndex < suggestionCount - 1}
-        onNextSuggestion={onNextSuggestion}
-        onReview={onReview}
-        onHome={onHome}
-      />
+      <View style={styles.profilePage}>
+        <ProfileCard profile={profile} />
+        <AppButton label={t('success.review')} variant="secondary" onPress={onReview} />
+        <AppButton label={t('dashboard.back')} variant="ghost" onPress={() => onView('home')} />
+      </View>
     );
   }
 
-  if (suggestionState) {
-    // The search ran, but there is nothing left to show: either nobody who
-    // fits each other's preferences is in the database, or the user has seen
-    // everyone it found.
+  if (view === 'matches') {
+    return (
+      <View style={styles.matchesPage}>
+        <ThemedView type="backgroundElement" style={styles.successCard}>
+          <LogoMark size={72} />
+          <ThemedText type="subtitle" style={styles.successTitle}>
+            {t('dashboard.noMatches')}
+          </ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.successBody}>
+            {t('dashboard.noMatchesHint')}
+          </ThemedText>
+          <AppButton
+            label={t('success.suggestions')}
+            variant="primary"
+            onPress={onFindSuggestions}
+            style={styles.successButton}
+          />
+        </ThemedView>
+        <AppButton label={t('dashboard.back')} variant="ghost" onPress={() => onView('home')} />
+      </View>
+    );
+  }
+
+  if (view === 'suggestions') {
+    if (suggestion) {
+      return (
+        <SuggestionView
+          suggestion={suggestion}
+          position={suggestionIndex + 1}
+          total={results.length}
+          answers={answers}
+          importantIds={importantIds}
+          hasMore={suggestionIndex < results.length - 1}
+          onNextSuggestion={onNextSuggestion}
+          onHome={() => onView('home')}
+        />
+      );
+    }
+
     return (
       <ThemedView type="backgroundElement" style={styles.successCard}>
         <LogoMark size={72} />
         <ThemedText type="subtitle" style={styles.successTitle}>
-          {suggestionCount === 0 ? t('success.empty') : t('success.finished')}
+          {results.length === 0 ? t('success.empty') : t('success.finished')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.successBody}>
-          {suggestionCount === 0 ? t('success.emptyHint') : t('success.finishedHint')}
+          {results.length === 0 ? t('success.emptyHint') : t('success.finishedHint')}
         </ThemedText>
-        <View style={styles.successActions}>
-          <AppButton
-            label={t('success.review')}
-            variant="primary"
-            onPress={onReview}
-            style={styles.successButton}
-          />
-          <AppButton
-            label={t('success.home')}
-            variant="secondary"
-            onPress={onHome}
-            style={styles.successButton}
-          />
-        </View>
+        <AppButton
+          label={t('dashboard.back')}
+          variant="primary"
+          onPress={() => onView('home')}
+          style={styles.successButton}
+        />
       </ThemedView>
     );
   }
@@ -590,73 +645,30 @@ function SuccessView({
       </ThemedText>
       <View style={styles.successActions}>
         <AppButton
-          label={t('success.suggestions')}
+          label={t('dashboard.matches')}
           variant="primary"
+          onPress={() => onView('matches')}
+          style={styles.successButton}
+        />
+        <AppButton
+          label={t('success.suggestions')}
+          variant="secondary"
           onPress={onFindSuggestions}
           style={styles.successButton}
         />
         <AppButton
           label={t('success.view')}
           variant="secondary"
-          onPress={() => setPreviewOpen(true)}
+          onPress={() => onView('profile')}
           style={styles.successButton}
         />
         <AppButton
-          label={t('success.review')}
+          label={t('dashboard.signOut')}
           variant="ghost"
-          onPress={onReview}
-          style={styles.successButton}
-        />
-        <AppButton
-          label={t('success.home')}
-          variant="ghost"
-          onPress={onHome}
+          onPress={onSignOut}
           style={styles.successButton}
         />
       </View>
-
-      <Modal
-        visible={previewOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPreviewOpen(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <ThemedView style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <ThemedText style={styles.modalTitle}>{t('success.profile')}</ThemedText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('success.closePreview')}
-                hitSlop={12}
-                onPress={() => setPreviewOpen(false)}
-                style={({ pressed }) => [
-                  styles.modalClose,
-                  { backgroundColor: theme.backgroundElement },
-                  pressed && { opacity: 0.6 },
-                ]}
-              >
-                <ThemedText style={styles.modalCloseGlyph}>✕</ThemedText>
-              </Pressable>
-            </View>
-
-            <ScrollView
-              style={styles.modalScroll}
-              contentContainerStyle={styles.modalScrollContent}
-              showsVerticalScrollIndicator
-            >
-              <ProfileCard profile={profile} />
-            </ScrollView>
-
-            <AppButton
-              label={t('common.close')}
-              variant="secondary"
-              onPress={() => setPreviewOpen(false)}
-              style={styles.successButton}
-            />
-          </ThemedView>
-        </View>
-      </Modal>
     </ThemedView>
   );
 }
@@ -688,19 +700,21 @@ function SharedAnswerList({ label, questions }: { label: string; questions: YesN
  */
 function SuggestionView({
   suggestion,
+  position,
+  total,
   answers,
   importantIds,
   hasMore,
   onNextSuggestion,
-  onReview,
   onHome,
 }: {
   suggestion: MatchResult;
+  position: number;
+  total: number;
   answers: PersonalityAnswers;
   importantIds: ReadonlySet<string>;
   hasMore: boolean;
   onNextSuggestion: () => void;
-  onReview: () => void;
   onHome: () => void;
 }) {
   const { t } = useI18n();
@@ -719,8 +733,11 @@ function SuggestionView({
 
   return (
     <ThemedView type="backgroundElement" style={styles.successCard}>
+      <ThemedText themeColor="textSecondary" type="small">
+        {position} / {total}
+      </ThemedText>
       <ThemedText themeColor="textSecondary" type="smallBold" style={styles.suggestionEyebrow}>
-        {t('match.score', { score })}
+        {t('suggestion.score', { score })}
       </ThemedText>
       <ThemedText type="subtitle" style={styles.successTitle}>
         {t('match.meet', { name: candidate.name })}
@@ -752,14 +769,8 @@ function SuggestionView({
           />
         ) : null}
         <AppButton
-          label={t('success.review')}
+          label={t('dashboard.back')}
           variant={hasMore ? 'secondary' : 'primary'}
-          onPress={onReview}
-          style={styles.successButton}
-        />
-        <AppButton
-          label={t('success.home')}
-          variant="ghost"
           onPress={onHome}
           style={styles.successButton}
         />
@@ -808,6 +819,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
+  headerTitleSpacer: { flex: 1 },
   progressBlock: {
     gap: Spacing.two,
   },
@@ -897,47 +909,6 @@ const styles = StyleSheet.create({
   successButton: {
     alignSelf: 'stretch',
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.four,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 560,
-    maxHeight: '92%',
-    borderRadius: 28,
-    padding: Spacing.four,
-    gap: Spacing.three,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  modalTitle: {
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '800',
-  },
-  modalClose: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseGlyph: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '800',
-  },
-  modalScroll: {
-    flexShrink: 1,
-  },
-  modalScrollContent: {
-    paddingBottom: Spacing.one,
-  },
+  profilePage: { gap: Spacing.three, marginTop: Spacing.three },
+  matchesPage: { gap: Spacing.three, marginTop: Spacing.three },
 });
